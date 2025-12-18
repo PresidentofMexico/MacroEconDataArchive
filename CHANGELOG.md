@@ -13,7 +13,7 @@ This document summarizes all the bugs fixed and improvements made to prepare the
 ### 2. Missing Configuration File (CRITICAL)
 **Problem:** The `macro_chart_spec.json` file referenced in documentation did not exist
 **Impact:** Users could not run the script without manually creating this file
-**Fix:** Created comprehensive `macro_chart_spec.json` with 10 example charts covering:
+**Fix:** Created comprehensive `config/macro_chart_spec.json` with 10 example charts covering:
 - Real GDP (level and growth rate)
 - CPI and inflation rate
 - Unemployment rate
@@ -75,6 +75,15 @@ else:
 **Impact:** Difficult to integrate into automated pipelines
 **Fix:** Return proper exit codes (0 for success, 1 for failure)
 
+### 10. Repository Layout Standardization (LOW)
+**Problem:** Implementation, configuration, and documentation lived at the repo root
+**Impact:** Harder to navigate as the project grows
+**Fix:** Adopted a conventional folder layout:
+- `src/` for importable Python modules
+- `docs/` for guides and implementation notes
+- `config/` for chart specifications
+- Root-level `app.py` and `generate_macro_report.py` kept as wrappers for backwards-compatible entrypoints
+
 ## Testing Performed
 
 1. ✓ Python syntax validation (`python3 -m py_compile`)
@@ -88,7 +97,7 @@ else:
 
 ### Added Files:
 - `.gitignore` - Build artifact exclusion rules
-- `macro_chart_spec.json` - Example chart specification with 10 charts
+- `config/macro_chart_spec.json` - Example chart specification with 10 charts
 - `requirements.txt` - Python dependency list
 - `README.md` - Comprehensive user documentation
 - `CHANGELOG.md` - This file
@@ -105,14 +114,21 @@ else:
 
 ```
 MacroEconDataArchive/
-├── .gitignore                          # Build artifact exclusions
-├── AGENTS.md                           # Agentic architecture documentation
-├── CHANGELOG.md                        # This changelog
-├── README.md                           # Main user documentation
-├── README_macro_report_generator.txt   # Original documentation
-├── generate_macro_report.py            # Main script (fixed)
-├── macro_chart_spec.json              # Chart specification (new)
-└── requirements.txt                    # Dependencies (new)
+├── .gitignore                      # Build artifact exclusions
+├── AGENTS.md                       # Agentic architecture documentation
+├── CHANGELOG.md                    # This changelog
+├── README.md                       # Main user documentation
+├── app.py                          # Streamlit entrypoint (wrapper)
+├── generate_macro_report.py        # CLI entrypoint (wrapper)
+├── config/
+│   └── macro_chart_spec.json       # Chart specification
+├── docs/
+│   ├── IMPLEMENTATION_SUMMARY.md   # Implementation notes
+│   ├── MACROBUILDER_GUIDE.md       # User guide
+│   └── README_macro_report_generator.txt
+├── requirements.txt                # Dependencies
+└── src/
+    └── macro_econ_data_archive/    # Package implementation
 ```
 
 ## Validation Status

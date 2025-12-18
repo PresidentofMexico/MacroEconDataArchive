@@ -12,23 +12,25 @@
 
 MacroBuilder is a full-featured Streamlit web application that transforms the command-line macro report generator into an interactive tool with AI-powered economic analysis.
 
+> Note: The repository now uses a `src/` layout. Root-level `app.py` and `generate_macro_report.py` remain as thin wrappers for backwards-compatible entrypoints.
+
 ### Core Components
 
-1. **app.py** (633 lines)
-   - Main Streamlit application
+1. **app.py** (wrapper) / **src/macro_econ_data_archive/streamlit_app.py**
+   - Streamlit application entrypoint + implementation
    - Interactive UI with sidebar and tabs
    - Chart builder and management
    - AI integration for narrative generation
    - PDF export functionality
 
-2. **macro_utils.py** (140 lines)
-   - Extracted utility functions from CLI tool
+2. **src/macro_econ_data_archive/macro_utils.py**
+   - Shared utility functions (CLI + Streamlit)
    - Data fetching from FRED API
    - Transformation functions (YoY, QoQ SAAR)
    - Reusable across both CLI and web app
 
 3. **Supporting Documentation**
-   - MACROBUILDER_GUIDE.md - User guide
+   - docs/MACROBUILDER_GUIDE.md - User guide
    - Updated README.md with quick start
    - Updated AGENTS.md with session details
 
@@ -84,7 +86,7 @@ MacroBuilder is a full-featured Streamlit web application that transforms the co
 - **Streamlit 1.40+**: Web framework
 - **Plotly 5.24+**: Interactive visualizations
 - **OpenAI 1.57+**: AI narrative generation
-- **pandas-datareader**: FRED API access
+- **pandas**: FRED data access (public CSV endpoint)
 - **reportlab**: PDF generation
 - **kaleido**: Plotly to static image conversion
 
@@ -134,7 +136,7 @@ The app will open at http://localhost:8501
 ### CLI Still Works
 
 ```bash
-python generate_macro_report.py --spec macro_chart_spec.json --out report.pdf
+python generate_macro_report.py --spec config/macro_chart_spec.json --out report.pdf
 ```
 
 ---
@@ -154,16 +156,15 @@ python generate_macro_report.py --spec macro_chart_spec.json --out report.pdf
 
 ```
 MacroEconDataArchive/
-├── app.py                     # Streamlit application (NEW)
-├── macro_utils.py             # Utility functions (NEW)
-├── generate_macro_report.py   # CLI tool (unchanged)
-├── macro_chart_spec.json      # Chart configuration
-├── requirements.txt           # Dependencies (updated)
-├── README.md                  # Documentation (updated)
-├── MACROBUILDER_GUIDE.md      # User guide (NEW)
-├── AGENTS.md                  # Architecture docs (updated)
-├── CHANGELOG.md               # Bug fix history
-└── test_app_functionality.py  # Test suite (NEW)
+├── app.py                              # Streamlit entrypoint (wrapper)
+├── generate_macro_report.py            # CLI entrypoint (wrapper)
+├── src/macro_econ_data_archive/        # Package implementation
+├── config/macro_chart_spec.json        # Chart configuration
+├── docs/                               # Guides and implementation notes
+├── requirements.txt                    # Dependencies
+├── README.md                           # Main documentation
+├── AGENTS.md                           # Architecture docs
+└── CHANGELOG.md                        # Change history
 ```
 
 ---
@@ -216,7 +217,7 @@ Potential improvements for future sessions:
 
 ## Support & Documentation
 
-- **User Guide**: See `MACROBUILDER_GUIDE.md`
+- **User Guide**: See `docs/MACROBUILDER_GUIDE.md`
 - **Architecture**: See `AGENTS.md` session 3
 - **Bug History**: See `CHANGELOG.md`
 - **README**: See `README.md`

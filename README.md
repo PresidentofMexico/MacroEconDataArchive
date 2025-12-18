@@ -44,9 +44,11 @@ streamlit run app.py
 
 ### MacroBuilder Architecture
 
-- **app.py**: Main Streamlit application
-- **macro_utils.py**: Shared data fetching and transformation utilities
-- **generate_macro_report.py**: PDF generation engine (also used by CLI)
+- **app.py**: Streamlit entrypoint (wrapper)
+- **src/macro_econ_data_archive/streamlit_app.py**: Streamlit implementation
+- **src/macro_econ_data_archive/macro_utils.py**: Shared data fetching + transforms
+- **generate_macro_report.py**: CLI entrypoint (wrapper)
+- **src/macro_econ_data_archive/report_generator.py**: Chart rendering + PDF engine (also used by MacroBuilder)
 
 ## ⚙️ CLI Tool - Automated Report Generation
 
@@ -55,10 +57,10 @@ For programmatic report generation and CI/CD pipelines.
 ### Files
 
 - **generate_macro_report.py**: Python script to generate a chart-driven PDF from public time series
-- **macro_chart_spec.json**: Example chart specification (edit/extend to match your needs)
-- **macro_utils.py**: Shared utility functions
+- **config/macro_chart_spec.json**: Example chart specification (edit/extend to match your needs)
 - **requirements.txt**: Python dependencies
 - **AGENTS.md**: Documentation of the agentic architecture design philosophy
+- **docs/**: Additional guides and implementation notes
 
 ## Quick Start
 
@@ -72,18 +74,18 @@ pip install -r requirements.txt
 
 Or install manually:
 ```bash
-pip install pandas pandas-datareader matplotlib reportlab streamlit openai plotly
+pip install pandas matplotlib reportlab streamlit openai plotly
 ```
 
 ### 2. Generate a PDF Report
 
 ```bash
-python generate_macro_report.py --spec macro_chart_spec.json --out Macro_Economic_Data_Archive.pdf
+python generate_macro_report.py --spec config/macro_chart_spec.json --out Macro_Economic_Data_Archive.pdf
 ```
 
 ### 3. Customize Your Report
 
-Edit `macro_chart_spec.json` to add or modify charts. For each chart, specify:
+Edit `config/macro_chart_spec.json` to add or modify charts. For each chart, specify:
 
 - **series**: List of FRED series IDs with labels
 - **transform**: `level`, `yoy` (year-over-year %), or `qoq_saar` (quarter-over-quarter SAAR %)
@@ -114,13 +116,13 @@ Example chart specification:
 ### Custom Date Range
 
 ```bash
-python generate_macro_report.py --spec macro_chart_spec.json --out report.pdf --start 2010-01-01
+python generate_macro_report.py --spec config/macro_chart_spec.json --out report.pdf --start 2010-01-01
 ```
 
 ### Custom Temporary Directory
 
 ```bash
-python generate_macro_report.py --spec macro_chart_spec.json --out report.pdf --tmpdir /tmp/charts
+python generate_macro_report.py --spec config/macro_chart_spec.json --out report.pdf --tmpdir /tmp/charts
 ```
 
 ## Data Sources
@@ -137,7 +139,7 @@ The script uses the FRED API to access official data from:
 
 This script is intentionally modular and can be extended to 100+ page reports by:
 
-1. Adding more chart entries to `macro_chart_spec.json`
+1. Adding more chart entries to `config/macro_chart_spec.json`
 2. Using different FRED series IDs (search at https://fred.stlouisfed.org/)
 3. Customizing the chart rendering and PDF layout functions
 4. Adding additional data sources beyond FRED
@@ -149,7 +151,6 @@ This script is intentionally modular and can be extended to 100+ page reports by
 - OpenAI API key (for MacroBuilder AI features)
 - The following Python packages:
   - pandas >= 2.3.3
-  - pandas-datareader >= 0.10.0
   - matplotlib >= 3.10.8
   - reportlab >= 4.4.6
   - streamlit >= 1.40.0 (for MacroBuilder)

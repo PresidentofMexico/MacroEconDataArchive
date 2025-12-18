@@ -48,7 +48,7 @@ Inputs: List of indicators (e.g., "CPI-U", "Real GDP", "U-3 Unemployment").
 
 Tools:
 
-pandas_datareader (FRED API interface)
+FRED public CSV downloader (no API key)
 
 BLS_Public_Data_API
 
@@ -380,6 +380,45 @@ Successfully implemented a full-featured Streamlit application (MacroBuilder) th
 
 ---
 
+### Session 4: Standardize Repo Layout (src/docs/config)
+**Date:** 2025-12-18  
+**Branch:** main  
+**Status:** ✅ COMPLETED  
+**Agent:** codex-cli (GPT-5.2)
+
+**Summary:**
+Reorganized the repository into a conventional `src/` Python package layout with dedicated `docs/` and `config/` folders while keeping existing CLI/Streamlit entrypoints stable.
+
+**Tasks Completed:**
+- ✅ Moved implementation modules into `src/macro_econ_data_archive/`
+- ✅ Added thin root wrappers: `app.py` and `generate_macro_report.py`
+- ✅ Moved documentation into `docs/` and chart spec into `config/`
+- ✅ Updated references in `README.md`, `docs/`, `AGENTS.md`, and `CHANGELOG.md`
+- ✅ Removed `pandas-datareader` dependency (Python 3.13 incompatibility) and switched FRED fetch to public CSV endpoint
+
+**Issues Found & Fixed:**
+- 🐛 `pandas-datareader` failed on Python 3.13 due to missing `distutils`; replaced with `https://fred.stlouisfed.org/graph/fredgraph.csv?id=...` downloader in `src/macro_econ_data_archive/macro_utils.py`
+
+**Files Modified:**
+- 📝 `src/macro_econ_data_archive/macro_utils.py` - New FRED fetch implementation
+- 📝 `src/macro_econ_data_archive/report_generator.py` - Core CLI/PDF engine under `src/`
+- 📝 `src/macro_econ_data_archive/streamlit_app.py` - Streamlit implementation under `src/`
+- 📝 `app.py` - Wrapper entrypoint
+- 📝 `generate_macro_report.py` - Wrapper entrypoint
+- 📝 `config/macro_chart_spec.json` - Moved from repo root
+- 📝 `docs/MACROBUILDER_GUIDE.md` - Moved + updated paths
+- 📝 `docs/IMPLEMENTATION_SUMMARY.md` - Moved + updated layout references
+- 📝 `docs/README_macro_report_generator.txt` - Moved + updated paths
+- 📝 `README.md` - Updated paths and architecture references
+- 📝 `requirements.txt` - Removed `pandas-datareader`
+- 📝 `CHANGELOG.md` - Documented restructure and dependency change
+
+**Testing Performed:**
+- ✅ `python -m py_compile` on wrappers and `src/` modules
+- ✅ CLI smoke test: `python generate_macro_report.py --spec config/macro_chart_spec.json --out _charts_tmp/smoke.pdf --start 2020-01-01`
+
+---
+
 ## Template for Next Agent Session
 
 **Copy and fill this template when you start your session:**
@@ -434,10 +473,10 @@ Successfully implemented a full-featured Streamlit application (MacroBuilder) th
 📋 **Quick Reference:**
 - Main script: `generate_macro_report.py`
 - Streamlit app: `app.py`
-- Utilities: `macro_utils.py`
-- Config file: `macro_chart_spec.json`
+- Source package: `src/macro_econ_data_archive/`
+- Config file: `config/macro_chart_spec.json`
 - Dependencies: `requirements.txt`
-- User guide: `MACROBUILDER_GUIDE.md`
+- User guide: `docs/MACROBUILDER_GUIDE.md`
 - Architecture: See sections 1-5 above
 - Bug history: See `CHANGELOG.md`
 - Session history: This section

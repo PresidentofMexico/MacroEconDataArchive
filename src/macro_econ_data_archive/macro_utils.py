@@ -6,9 +6,12 @@ Utility functions for fetching and transforming macroeconomic data.
 Extracted from generate_macro_report.py to enable reuse in both CLI and Streamlit apps.
 """
 
+from __future__ import annotations
+
 from typing import List
+from urllib.parse import quote_plus
+
 import pandas as pd
-from pandas_datareader import data as pdr
 
 
 # --------------------------
@@ -84,7 +87,7 @@ def infer_yoy_periods(freq: str) -> int:
 
 def fetch_fred(series_ids: List[str], start: str = "1990-01-01") -> pd.DataFrame:
     """
-    Fetch series from FRED via pandas_datareader. Requires internet access.
+    Fetch series from FRED via the public `fredgraph.csv` endpoint (no API key).
     
     Args:
         series_ids: List of FRED series IDs to fetch
@@ -96,17 +99,27 @@ def fetch_fred(series_ids: List[str], start: str = "1990-01-01") -> pd.DataFrame
     Raises:
         Exception: If data cannot be fetched from FRED
     """
+    start_ts = pd.to_datetime(start)
     df = pd.DataFrame()
     for sid in series_ids:
-        s = pdr.DataReader(sid, "fred", start=start)
-        if isinstance(s, pd.DataFrame):
-            # Handle case where column name might not match series ID exactly
-            if sid in s.columns:
-                s = s[sid]
-            else:
-                # Take the first column if exact match not found
-                s = s.iloc[:, 0]
-        df[sid] = safe_to_numeric(s)
+        url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={quote_plus(sid)}"
+        raw = pd.read_csv(url)
+        if "DATE" in raw.columns:
+            date_col = "DATE"
+        elif "observation_date" in raw.columns:
+            date_col = "observation_date"
+        else:
+            raise ValueError(f"Unexpected FRED response for series '{sid}': missing date column")
+
+        raw[date_col] = pd.to_datetime(raw[date_col], errors="coerce")
+        raw = raw.dropna(subset=[date_col]).set_index(date_col).sort_index()
+
+        if sid not in raw.columns:
+            raise ValueError(f"Unexpected FRED response for series '{sid}': missing '{sid}' column")
+
+        s = safe_to_numeric(raw[sid])
+        s = s[s.index >= start_ts]
+        df[sid] = s
     return df
 
 

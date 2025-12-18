@@ -179,10 +179,10 @@ For best results:
 If you prefer automation, use the CLI tool:
 
 ```bash
-python generate_macro_report.py --spec macro_chart_spec.json --out report.pdf
+python generate_macro_report.py --spec config/macro_chart_spec.json --out report.pdf
 ```
 
-Edit `macro_chart_spec.json` to define your charts programmatically.
+Edit `config/macro_chart_spec.json` to define your charts programmatically.
 
 ## Support and Contributions
 
