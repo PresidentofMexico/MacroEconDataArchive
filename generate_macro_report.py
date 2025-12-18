@@ -40,6 +40,14 @@ from reportlab.pdfgen import canvas
 
 
 # --------------------------
+# Constants
+# --------------------------
+
+EXIT_SUCCESS = 0
+EXIT_FAILURE = 1
+
+
+# --------------------------
 # Transform utilities
 # --------------------------
 
@@ -268,11 +276,11 @@ def main():
 
     if not pngs:
         print("Error: No charts were successfully generated. Cannot create PDF.")
-        return 1
+        return EXIT_FAILURE
     
     assemble_pdf(title, as_of, pngs, Path(args.out))
     print(f"Wrote: {args.out}")
-    return 0
+    return EXIT_SUCCESS
 
 if __name__ == "__main__":
     import sys
