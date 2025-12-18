@@ -322,34 +322,34 @@ def render_sidebar():
     
     # Quick examples
     st.sidebar.subheader("Quick Add Examples")
-    if st.sidebar.button("📈 Real GDP", use_container_width=True):
+    if st.sidebar.button("📈 Real GDP Growth", use_container_width=True):
         add_chart_to_report(
-            "Real Gross Domestic Product",
+            "Real GDP Growth (Quarter over Quarter, Annualized)",
             "GDPC1",
             "Real GDP",
             "quarterly",
-            "level",
-            "Billions of Chained 2017 Dollars"
-        )
-    
-    if st.sidebar.button("📊 Unemployment Rate", use_container_width=True):
-        add_chart_to_report(
-            "Unemployment Rate",
-            "UNRATE",
-            "U-3 Unemployment Rate",
-            "monthly",
-            "level",
+            "qoq_saar",
             "Percent"
         )
     
-    if st.sidebar.button("💰 Inflation (YoY)", use_container_width=True):
+    if st.sidebar.button("📊 Real Consumer Spending", use_container_width=True):
         add_chart_to_report(
-            "Inflation Rate (Year-over-Year)",
-            "CPIAUCSL",
-            "CPI-U YoY % Change",
+            "Real Consumer Spending (Year-over-Year)",
+            "PCEC96",
+            "Real Personal Consumption Expenditures",
             "monthly",
             "yoy",
             "Percent"
+        )
+    
+    if st.sidebar.button("💰 Federal Debt to GDP", use_container_width=True):
+        add_chart_to_report(
+            "Federal Debt as Percent of GDP",
+            "GFDEGDQ188S",
+            "Federal Debt to GDP",
+            "quarterly",
+            "level",
+            "Percent of GDP"
         )
 
 
