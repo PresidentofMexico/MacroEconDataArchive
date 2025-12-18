@@ -40,6 +40,14 @@ from reportlab.pdfgen import canvas
 
 
 # --------------------------
+# Constants
+# --------------------------
+
+EXIT_SUCCESS = 0
+EXIT_FAILURE = 1
+
+
+# --------------------------
 # Transform utilities
 # --------------------------
 
@@ -86,7 +94,12 @@ def fetch_fred(series_ids: List[str], start: str = "1990-01-01") -> pd.DataFrame
     for sid in series_ids:
         s = pdr.DataReader(sid, "fred", start=start)
         if isinstance(s, pd.DataFrame):
-            s = s[sid]
+            # Handle case where column name might not match series ID exactly
+            if sid in s.columns:
+                s = s[sid]
+            else:
+                # Take the first column if exact match not found
+                s = s.iloc[:, 0]
         df[sid] = safe_to_numeric(s)
     return df
 
@@ -246,14 +259,29 @@ def main():
 
     for i, ch in enumerate(charts, start=1):
         series_ids = [s.id for s in ch.series]
-        raw = fetch_fred(series_ids, start=args.start)
-        transformed = build_series_for_chart(raw, ch).dropna(how="all")
-        out_png = tmpdir / f"chart_{i:03d}.png"
-        render_chart(ch, transformed, out_png)
-        pngs.append(out_png)
+        print(f"Processing chart {i}/{len(charts)}: {ch.page_title}")
+        try:
+            raw = fetch_fred(series_ids, start=args.start)
+            transformed = build_series_for_chart(raw, ch).dropna(how="all")
+            if transformed.empty:
+                print(f"  Warning: No data available for chart '{ch.page_title}'. Skipping.")
+                continue
+            out_png = tmpdir / f"chart_{i:03d}.png"
+            render_chart(ch, transformed, out_png)
+            pngs.append(out_png)
+        except Exception as e:
+            print(f"  Error processing chart '{ch.page_title}': {e}")
+            print(f"  Skipping this chart and continuing...")
+            continue
 
+    if not pngs:
+        print("Error: No charts were successfully generated. Cannot create PDF.")
+        return EXIT_FAILURE
+    
     assemble_pdf(title, as_of, pngs, Path(args.out))
     print(f"Wrote: {args.out}")
+    return EXIT_SUCCESS
 
 if __name__ == "__main__":
-    main()
+    import sys
+    sys.exit(main())
