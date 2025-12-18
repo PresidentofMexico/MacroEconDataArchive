@@ -29,6 +29,11 @@ ENV/
 _charts_tmp/
 *.png
 *.pdf
+test_app_functionality.py
+
+# Streamlit
+.streamlit/
+*.streamlit/
 
 # IDE
 .vscode/
