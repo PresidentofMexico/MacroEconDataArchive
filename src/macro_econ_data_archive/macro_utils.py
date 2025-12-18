@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import List
 from urllib.parse import quote_plus
+import requests
+import io
 
 import pandas as pd
 
@@ -101,25 +103,43 @@ def fetch_fred(series_ids: List[str], start: str = "1990-01-01") -> pd.DataFrame
     """
     start_ts = pd.to_datetime(start)
     df = pd.DataFrame()
+    
+    # Use requests with a proper User-Agent to avoid 403 Forbidden
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
+    }
+    
     for sid in series_ids:
         url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={quote_plus(sid)}"
-        raw = pd.read_csv(url)
-        if "DATE" in raw.columns:
-            date_col = "DATE"
-        elif "observation_date" in raw.columns:
-            date_col = "observation_date"
-        else:
-            raise ValueError(f"Unexpected FRED response for series '{sid}': missing date column")
+        
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            
+            # Read CSV from response content
+            raw = pd.read_csv(io.StringIO(response.text))
+            
+            if "DATE" in raw.columns:
+                date_col = "DATE"
+            elif "observation_date" in raw.columns:
+                date_col = "observation_date"
+            else:
+                raise ValueError(f"Unexpected FRED response for series '{sid}': missing date column")
 
-        raw[date_col] = pd.to_datetime(raw[date_col], errors="coerce")
-        raw = raw.dropna(subset=[date_col]).set_index(date_col).sort_index()
+            raw[date_col] = pd.to_datetime(raw[date_col], errors="coerce")
+            raw = raw.dropna(subset=[date_col]).set_index(date_col).sort_index()
 
-        if sid not in raw.columns:
-            raise ValueError(f"Unexpected FRED response for series '{sid}': missing '{sid}' column")
+            if sid not in raw.columns:
+                raise ValueError(f"Unexpected FRED response for series '{sid}': missing '{sid}' column")
 
-        s = safe_to_numeric(raw[sid])
-        s = s[s.index >= start_ts]
-        df[sid] = s
+            s = safe_to_numeric(raw[sid])
+            s = s[s.index >= start_ts]
+            df[sid] = s
+            
+        except Exception as e:
+            # Re-raise with context
+            raise Exception(f"Failed to fetch data for {sid}: {str(e)}")
+            
     return df
 
 
