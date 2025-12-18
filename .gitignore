@@ -30,6 +30,10 @@ _charts_tmp/
 *.png
 *.pdf
 
+# Streamlit
+.streamlit/
+*.streamlit/
+
 # IDE
 .vscode/
 .idea/
