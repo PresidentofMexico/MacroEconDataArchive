@@ -87,13 +87,13 @@ python generate_macro_report.py --spec config/macro_chart_spec.json --out Macro_
 
 Edit `config/macro_chart_spec.json` to add or modify charts. For each chart, specify:
 
-- **series**: List of FRED series IDs with labels
+- **series**: List of FRED series IDs with labels (supports multiple series per chart!)
 - **transform**: `level`, `yoy` (year-over-year %), or `qoq_saar` (quarter-over-quarter SAAR %)
 - **frequency**: `daily`, `weekly`, `monthly`, or `quarterly`
 - **units**: Label for the y-axis
 - **notes**: Optional notes about the data source
 
-Example chart specification:
+**Single-series chart example:**
 
 ```json
 {
@@ -108,6 +108,28 @@ Example chart specification:
   "frequency": "monthly",
   "units": "Percent",
   "notes": "Source: Bureau of Labor Statistics via FRED"
+}
+```
+
+**Multi-series chart example (NEW!):**
+
+```json
+{
+  "page_title": "Short-Term vs Long-Term Interest Rates",
+  "series": [
+    {
+      "id": "FEDFUNDS",
+      "label": "Federal Funds Rate"
+    },
+    {
+      "id": "GS10",
+      "label": "10-Year Treasury Yield"
+    }
+  ],
+  "transform": "level",
+  "frequency": "monthly",
+  "units": "Percent",
+  "notes": "Comparison of short-term policy rate vs long-term market rate"
 }
 ```
 

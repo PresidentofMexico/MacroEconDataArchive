@@ -51,26 +51,38 @@ When you first open the app:
 
 ### 2. Adding Charts
 
-#### Method A: Quick Add Examples
+#### Method A: Quick Add Examples (Single & Multi-Series)
 Use the quick-add buttons in the sidebar:
-- **📈 Real GDP**: Adds quarterly real GDP data
-- **📊 Unemployment Rate**: Adds monthly unemployment rate
-- **💰 Inflation (YoY)**: Adds year-over-year inflation
+- **📈 Real GDP Growth**: Adds quarterly real GDP growth data
+- **📊 Real Consumer Spending**: Adds monthly consumer spending growth
+- **💰 Federal Debt to GDP**: Adds federal debt ratio
+- **📉 Fed Funds vs 10Y Treasury**: **NEW!** Multi-series chart comparing short-term and long-term rates
 
-#### Method B: Custom Charts
+#### Method B: Custom Charts (Multi-Series Support!)
 1. Click "Chart Configuration" in the sidebar to expand the form
-2. Fill in the fields:
-   - **Chart Title**: Descriptive title for your chart
-   - **FRED Series ID**: The FRED identifier (e.g., `GDPC1`, `UNRATE`, `CPIAUCSL`)
+2. **Add series to your chart:**
+   - Enter **FRED Series ID** (e.g., `GDPC1`, `UNRATE`, `CPIAUCSL`)
      - Find series IDs at https://fred.stlouisfed.org/
-   - **Series Label**: Label for the chart legend
+   - Enter **Series Label** for the legend
+   - Click **➕ Add Series to List**
+   - Repeat for additional series (you can add multiple series to one chart!)
+   - Use the 🗑️ button to remove a series from the list
+3. **Configure chart settings:**
+   - **Chart Title**: Descriptive title for your chart
    - **Frequency**: How often the data is reported (monthly, quarterly, etc.)
    - **Transform**: How to display the data:
      - `level`: Raw values
      - `yoy`: Year-over-year percent change
      - `qoq_saar`: Quarter-over-quarter seasonally adjusted annual rate
    - **Units**: Y-axis label (e.g., "Percent", "Billions of Dollars")
-3. Click "➕ Add Chart to Report"
+4. Click **📊 Create Chart** to add to your report
+
+**Multi-Series Example Use Cases:**
+- Compare Federal Funds Rate vs 10-Year Treasury Yield
+- Overlay CPI inflation with Core CPI
+- Compare GDP growth across multiple countries
+- Plot unemployment rate vs labor force participation rate
+- Compare different stock market indices
 
 ### 3. Working with Charts
 
