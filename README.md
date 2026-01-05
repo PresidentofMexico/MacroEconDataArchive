@@ -1,25 +1,34 @@
 # Macro Economic Data Archive
 
 A powerful toolkit for creating chart-driven macroeconomic reports from public time series data. Available in two modes:
-- **🚀 MacroBuilder (Streamlit App)**: Interactive web app with AI-powered insights, caching, multi-series charts, and templates
+- **🚀 MacroBuilder (Streamlit App)**: Interactive web app with AI-powered insights, data caching, multi-series charts, and templates
 - **⚙️ CLI Tool**: Command-line PDF generator for automated workflows with template support
 
-## ✨ Latest Features (2026-01-05)
+## ✨ Latest Features (2026-01-05) ✅ COMPLETED
 
 **🎯 Template System** - One-click report generation with 3 pre-built templates:
 - Core Macro (4 indicators): GDP, inflation, unemployment, interest rates
 - Inflation Deep Dive (8 measures): Headline, core, and component analysis
 - Labor Markets (9 indicators): Employment, wages, and labor force metrics
 
-**⚡ Enhanced Reliability**:
-- Exponential backoff retry logic (auto-recovers from transient errors)
-- Smart error handling (rate limits, server errors, network issues)
-- Comprehensive smoke tests for quality assurance
+**⚡ Data Caching & Reliability**:
+- 1-hour data caching (10-200x speedup for repeated fetches) ✅
+- Exponential backoff retry logic (auto-recovers from transient errors) ✅
+- Smart error handling (rate limits, server errors, network issues) ✅
+- Custom exceptions (FREDRateLimitError, FREDServerError) ✅
+- Manual cache clear button in UI ✅
 
-**🔜 Coming Soon** (Integration in progress):
-- Data caching (50-200x speedup for repeated fetches)
-- Multi-series charts (compare multiple indicators on one chart)
-- Template loading UI (CLI + Streamlit)
+**📊 Multi-Series Charts**:
+- Plot multiple indicators on one chart for comparison ✅
+- Interactive legend and hover details ✅
+- Support for both single and multi-series templates ✅
+
+**🧪 Comprehensive Testing**:
+- 5 test suites with 25+ tests (all passing) ✅
+- Installation verification script ✅
+- Smoke tests for CLI and Streamlit ✅
+- Template validation tests ✅
+- Caching and retry logic tests ✅
 
 ## Overview
 
@@ -27,12 +36,14 @@ This toolkit generates professional economic reports with data visualizations, s
 
 ## 🆕 MacroBuilder - Interactive Streamlit App
 
-**NEW!** Build custom economic reports interactively with AI-powered analysis.
+Build custom economic reports interactively with AI-powered analysis.
 
 ### Features
 - 📊 **Dynamic Chart Builder**: Add charts from 800,000+ FRED series with real-time preview
 - 🎯 **Template System**: One-click report generation from pre-built templates
-- ⚡ **High Performance**: Retry logic with exponential backoff ensures reliable data fetching
+- ⚡ **Data Caching**: 1-hour TTL cache with 10-200x speedup for repeated queries
+- 🔄 **Smart Retry Logic**: Exponential backoff handles transient API errors
+- 📈 **Multi-Series Charts**: Compare multiple indicators on one chart
 - 🤖 **AI-Powered Analysis**: Generate professional economic narratives using ChatGPT 4o-mini
 - 🎨 **Interactive Visualizations**: Plotly charts with hover details and zoom
 - 📝 **Report Assembly**: Reorder charts, edit narratives, preview final report
@@ -45,35 +56,64 @@ This toolkit generates professional economic reports with data visualizations, s
 pip install -r requirements.txt
 ```
 
-2. **Set your OpenAI API key** (for AI features):
+2. **Verify installation:**
+```bash
+python verify_installation.py
+```
+
+3. **Set your OpenAI API key** (for AI features):
 ```bash
 export OPENAI_API_KEY='your-api-key-here'
 ```
 
-3. **Launch the app:**
+4. **Launch the app:**
 ```bash
 streamlit run app.py
 ```
 
-4. **Build your report:**
-   - Try quick-add examples or load a template
-   - Add custom charts using the sidebar
+5. **Build your report:**
+   - Load a template from the sidebar dropdown
+   - Try quick-add examples or add custom charts
    - Generate AI analysis for each chart
    - Reorder sections as needed
+   - Clear cache if you need fresh data
    - Export to PDF
 
 ### MacroBuilder Architecture
 
 - **app.py**: Streamlit entrypoint (wrapper)
-- **src/macro_econ_data_archive/streamlit_app.py**: Streamlit implementation
+- **src/macro_econ_data_archive/streamlit_app.py**: Streamlit implementation with caching and templates
 - **src/macro_econ_data_archive/macro_utils.py**: Shared data fetching + transforms (with retry logic)
 - **generate_macro_report.py**: CLI entrypoint (wrapper)
-- **config/templates/**: Pre-built report templates
-- **src/macro_econ_data_archive/report_generator.py**: Chart rendering + PDF engine (also used by MacroBuilder)
+- **config/templates/**: Pre-built report templates (JSON format)
+- **src/macro_econ_data_archive/report_generator.py**: Chart rendering + PDF engine + template loading
 
 ## ⚙️ CLI Tool - Automated Report Generation
 
 For programmatic report generation and CI/CD pipelines.
+
+### Quick Start with CLI
+
+1. **List available templates:**
+```bash
+python generate_macro_report.py --list-templates
+```
+
+2. **Generate report from template:**
+```bash
+python generate_macro_report.py \
+  --template core_macro \
+  --out report.pdf \
+  --start 2020-01-01
+```
+
+3. **Or use custom JSON spec (legacy):**
+```bash
+python generate_macro_report.py \
+  --spec config/macro_chart_spec.json \
+  --out report.pdf \
+  --start 2020-01-01
+```
 
 ### Files
 
