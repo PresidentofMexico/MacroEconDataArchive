@@ -1,0 +1,81 @@
+{
+  "template_metadata": {
+    "name": "Inflation Deep Dive",
+    "description": "Comprehensive inflation analysis across multiple measures and components",
+    "version": "1.0",
+    "tags": ["inflation", "CPI", "PCE", "prices"]
+  },
+  "report_title": "Inflation Deep Dive Analysis",
+  "charts": [
+    {
+      "page_title": "Headline vs Core CPI (Year-over-Year)",
+      "series": [
+        {"id": "CPIAUCSL", "label": "CPI All Items"},
+        {"id": "CPILFESL", "label": "CPI Less Food & Energy"}
+      ],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Headline and core consumer price inflation"
+    },
+    {
+      "page_title": "PCE Price Index (Year-over-Year)",
+      "series": [
+        {"id": "PCEPI", "label": "PCE All Items"},
+        {"id": "PCEPILFE", "label": "PCE Less Food & Energy"}
+      ],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Personal Consumption Expenditures Price Index - Fed's preferred inflation measure"
+    },
+    {
+      "page_title": "Energy Prices (Year-over-Year)",
+      "series": [{"id": "CPIENGSL", "label": "CPI Energy"}],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Energy component of CPI"
+    },
+    {
+      "page_title": "Food Prices (Year-over-Year)",
+      "series": [{"id": "CPIUFDSL", "label": "CPI Food"}],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Food component of CPI"
+    },
+    {
+      "page_title": "Shelter Costs (Year-over-Year)",
+      "series": [{"id": "CUSR0000SEHA", "label": "CPI Shelter"}],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Shelter component of CPI - largest CPI component"
+    },
+    {
+      "page_title": "Medical Care Services (Year-over-Year)",
+      "series": [{"id": "CPIMEDSL", "label": "CPI Medical Care"}],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Medical care component of CPI"
+    },
+    {
+      "page_title": "Transportation Services (Year-over-Year)",
+      "series": [{"id": "CPITRNSL", "label": "CPI Transportation"}],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Transportation component of CPI"
+    },
+    {
+      "page_title": "Producer Price Index (Year-over-Year)",
+      "series": [{"id": "PPIACO", "label": "PPI All Commodities"}],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Producer Price Index - upstream inflation pressure"
+    }
+  ]
+}

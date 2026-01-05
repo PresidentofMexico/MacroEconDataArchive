@@ -1,0 +1,43 @@
+{
+  "template_metadata": {
+    "name": "Core Macroeconomic Indicators",
+    "description": "Essential economic indicators for comprehensive macro analysis",
+    "version": "1.0",
+    "tags": ["GDP", "inflation", "employment", "rates"]
+  },
+  "report_title": "Core Macroeconomic Indicators Report",
+  "charts": [
+    {
+      "page_title": "Real GDP Growth (Quarter over Quarter, Annualized)",
+      "series": [{"id": "GDPC1", "label": "Real GDP"}],
+      "frequency": "quarterly",
+      "transform": "qoq_saar",
+      "units": "Percent",
+      "notes": "Real Gross Domestic Product, seasonally adjusted annual rate"
+    },
+    {
+      "page_title": "Consumer Price Inflation (Year-over-Year)",
+      "series": [{"id": "CPIAUCSL", "label": "CPI-U All Items"}],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Consumer Price Index for All Urban Consumers"
+    },
+    {
+      "page_title": "Unemployment Rate",
+      "series": [{"id": "UNRATE", "label": "Unemployment Rate"}],
+      "frequency": "monthly",
+      "transform": "level",
+      "units": "Percent",
+      "notes": "Civilian Unemployment Rate, seasonally adjusted"
+    },
+    {
+      "page_title": "Federal Funds Effective Rate",
+      "series": [{"id": "FEDFUNDS", "label": "Federal Funds Rate"}],
+      "frequency": "monthly",
+      "transform": "level",
+      "units": "Percent",
+      "notes": "Effective Federal Funds Rate"
+    }
+  ]
+}
