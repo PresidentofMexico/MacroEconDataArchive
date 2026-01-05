@@ -1,0 +1,131 @@
+{
+  "template_metadata": {
+    "name": "Labor Markets",
+    "description": "Comprehensive employment and labor market indicators",
+    "version": "1.0",
+    "tags": ["employment", "labor", "jobs", "wages"],
+    "author": "MacroBuilder Team",
+    "created": "2026-01-05"
+  },
+  "report_title": "Labor Market Analysis",
+  "as_of": "Current Period",
+  "charts": [
+    {
+      "page_title": "Unemployment Rate (U-3)",
+      "series": [
+        {
+          "id": "UNRATE",
+          "label": "U-3 Unemployment Rate"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Official unemployment rate. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "U-6 Unemployment Rate (Broad Measure)",
+      "series": [
+        {
+          "id": "U6RATE",
+          "label": "U-6 Unemployment Rate"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Includes discouraged and part-time workers. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Total Nonfarm Payrolls (Level)",
+      "series": [
+        {
+          "id": "PAYEMS",
+          "label": "Total Nonfarm Employment"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Thousands of Persons",
+      "notes": "Seasonally adjusted. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Nonfarm Payrolls - Year-over-Year Growth",
+      "series": [
+        {
+          "id": "PAYEMS",
+          "label": "Employment YoY Growth"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Year-over-year percent change in employment. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Labor Force Participation Rate",
+      "series": [
+        {
+          "id": "CIVPART",
+          "label": "Labor Force Participation Rate"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Percent of population in labor force. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Initial Jobless Claims (4-Week Moving Average)",
+      "series": [
+        {
+          "id": "ICSA",
+          "label": "Initial Claims"
+        }
+      ],
+      "transform": "level",
+      "frequency": "weekly",
+      "units": "Thousands",
+      "notes": "Seasonally adjusted. Source: Department of Labor via FRED"
+    },
+    {
+      "page_title": "Average Hourly Earnings - All Private Workers",
+      "series": [
+        {
+          "id": "CES0500000003",
+          "label": "Avg Hourly Earnings"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Dollars per Hour",
+      "notes": "Seasonally adjusted. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Average Hourly Earnings - Year-over-Year Growth",
+      "series": [
+        {
+          "id": "CES0500000003",
+          "label": "Wage Growth YoY"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Year-over-year wage growth. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Job Openings (JOLTS)",
+      "series": [
+        {
+          "id": "JTSJOL",
+          "label": "Total Job Openings"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Thousands",
+      "notes": "Job Openings and Labor Turnover Survey. Source: Bureau of Labor Statistics via FRED"
+    }
+  ]
+}

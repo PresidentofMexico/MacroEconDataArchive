@@ -14,6 +14,7 @@ This toolkit generates professional economic reports with data visualizations, s
 
 ### Features
 - 📊 **Dynamic Chart Builder**: Add charts from 800,000+ FRED series with real-time preview
+- 📋 **Template System**: Load pre-configured report templates with one click (Core Macro, Inflation, Labor Markets)
 - 🤖 **AI-Powered Analysis**: Generate professional economic narratives using ChatGPT 4o-mini
 - 🎨 **Interactive Visualizations**: Plotly charts with hover details and zoom
 - 📝 **Report Assembly**: Reorder charts, edit narratives, preview final report
@@ -37,10 +38,21 @@ streamlit run app.py
 ```
 
 4. **Build your report:**
-   - Add charts using the sidebar (or try quick-add examples)
+   - **Option A - Use a Template**: Select a template (e.g., "Core Macro Dashboard") and click "Load Template"
+   - **Option B - Build Custom**: Add charts one-by-one using the sidebar form or quick-add examples
    - Generate AI analysis for each chart
    - Reorder sections as needed
    - Export to PDF
+
+### Templates
+
+MacroBuilder includes built-in templates for common report types:
+
+- **Core Macro Dashboard**: GDP, inflation, unemployment, interest rates
+- **Inflation Deep Dive**: CPI, PCE, PPI, wage growth, breakeven rates
+- **Labor Markets**: Employment, jobless claims, wages, JOLTS
+
+See `docs/TEMPLATE_GUIDE.md` for details on using and creating custom templates.
 
 ### MacroBuilder Architecture
 
@@ -58,6 +70,7 @@ For programmatic report generation and CI/CD pipelines.
 
 - **generate_macro_report.py**: Python script to generate a chart-driven PDF from public time series
 - **config/macro_chart_spec.json**: Example chart specification (edit/extend to match your needs)
+- **config/templates/**: Pre-built report templates (core_macro, inflation_deep_dive, labor_markets)
 - **requirements.txt**: Python dependencies
 - **AGENTS.md**: Documentation of the agentic architecture design philosophy
 - **docs/**: Additional guides and implementation notes
@@ -79,6 +92,16 @@ pip install pandas matplotlib reportlab streamlit openai plotly
 
 ### 2. Generate a PDF Report
 
+**Using a template** (recommended):
+```bash
+# List available templates
+python generate_macro_report.py --list-templates
+
+# Generate from a template
+python generate_macro_report.py --template core_macro --out Core_Macro_Report.pdf
+```
+
+**Using a custom spec file**:
 ```bash
 python generate_macro_report.py --spec config/macro_chart_spec.json --out Macro_Economic_Data_Archive.pdf
 ```

@@ -1,0 +1,79 @@
+{
+  "template_metadata": {
+    "name": "Core Macro Dashboard",
+    "description": "Essential macroeconomic indicators: GDP, inflation, unemployment, and interest rates",
+    "version": "1.0",
+    "tags": ["core", "macro", "overview", "dashboard"],
+    "author": "MacroBuilder Team",
+    "created": "2026-01-05"
+  },
+  "report_title": "Core Macroeconomic Dashboard",
+  "as_of": "Current Period",
+  "charts": [
+    {
+      "page_title": "Real GDP Growth Rate (Quarter over Quarter, Annualized)",
+      "series": [
+        {
+          "id": "GDPC1",
+          "label": "Real GDP"
+        }
+      ],
+      "transform": "qoq_saar",
+      "frequency": "quarterly",
+      "units": "Percent",
+      "notes": "Seasonally adjusted annual rate. Source: Bureau of Economic Analysis via FRED"
+    },
+    {
+      "page_title": "Consumer Price Index - Year-over-Year Change",
+      "series": [
+        {
+          "id": "CPIAUCSL",
+          "label": "CPI-U"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Year-over-year percent change. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Unemployment Rate",
+      "series": [
+        {
+          "id": "UNRATE",
+          "label": "U-3 Unemployment Rate"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Seasonally adjusted. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Federal Funds Effective Rate",
+      "series": [
+        {
+          "id": "FEDFUNDS",
+          "label": "Federal Funds Rate"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Target range midpoint. Source: Federal Reserve via FRED"
+    },
+    {
+      "page_title": "10-Year Treasury Constant Maturity Rate",
+      "series": [
+        {
+          "id": "GS10",
+          "label": "10-Year Treasury Yield"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Daily observations averaged to monthly. Source: Federal Reserve via FRED"
+    }
+  ]
+}

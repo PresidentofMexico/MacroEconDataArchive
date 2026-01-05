@@ -150,9 +150,44 @@ def assemble_pdf(title: str, as_of: str, png_paths: List[Path], out_pdf: Path) -
 # Main
 # --------------------------
 
+def get_templates_dir() -> Path:
+    """Get the templates directory path."""
+    current_file = Path(__file__).resolve()
+    repo_root = current_file.parent.parent.parent
+    return repo_root / "config" / "templates"
+
+
 def load_spec(path: Path) -> Dict:
     with open(path, "r") as f:
         return json.load(f)
+
+
+def list_templates() -> List[str]:
+    """List available template names."""
+    templates_dir = get_templates_dir()
+    if not templates_dir.exists():
+        return []
+    return [f.stem for f in sorted(templates_dir.glob("*.json"))]
+
+
+def load_template(template_name: str) -> Dict:
+    """
+    Load a template by name from config/templates/
+    
+    Args:
+        template_name: Name of the template (without .json extension)
+        
+    Returns:
+        Dictionary containing template data
+    """
+    templates_dir = get_templates_dir()
+    template_path = templates_dir / f"{template_name}.json"
+    
+    if not template_path.exists():
+        raise FileNotFoundError(f"Template '{template_name}' not found in {templates_dir}")
+    
+    return load_spec(template_path)
+
 
 def parse_charts(spec_dict: Dict) -> List[ChartSpec]:
     charts = []
@@ -169,15 +204,64 @@ def parse_charts(spec_dict: Dict) -> List[ChartSpec]:
     return charts
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--spec", required=True, help="Path to chart specification JSON.")
-    ap.add_argument("--out", required=True, help="Output PDF file.")
+    ap = argparse.ArgumentParser(
+        description="Generate macroeconomic PDF reports from FRED data",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Generate from a spec file
+  python generate_macro_report.py --spec config/macro_chart_spec.json --out report.pdf
+  
+  # Generate from a template
+  python generate_macro_report.py --template core_macro --out report.pdf
+  
+  # List available templates
+  python generate_macro_report.py --list-templates
+        """
+    )
+    ap.add_argument("--spec", help="Path to chart specification JSON file.")
+    ap.add_argument("--template", help="Name of a template from config/templates/ (e.g., 'core_macro')")
+    ap.add_argument("--list-templates", action="store_true", help="List available templates and exit")
+    ap.add_argument("--out", help="Output PDF file.")
     ap.add_argument("--start", default="1990-01-01", help="Start date for data pulls.")
     ap.add_argument("--tmpdir", default="_charts_tmp", help="Temporary folder for chart PNGs.")
     args = ap.parse_args()
-
-    spec_path = Path(args.spec)
-    spec_dict = load_spec(spec_path)
+    
+    # Handle --list-templates
+    if args.list_templates:
+        templates = list_templates()
+        if templates:
+            print("Available templates:")
+            for template in templates:
+                print(f"  - {template}")
+        else:
+            print("No templates found in config/templates/")
+        return EXIT_SUCCESS
+    
+    # Validate arguments
+    if not args.spec and not args.template:
+        ap.error("Either --spec or --template must be provided")
+    
+    if args.spec and args.template:
+        ap.error("Cannot specify both --spec and --template")
+    
+    if not args.out:
+        ap.error("--out is required")
+    
+    # Load the specification
+    if args.template:
+        print(f"Loading template: {args.template}")
+        try:
+            spec_dict = load_template(args.template)
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            print(f"\nAvailable templates:")
+            for template in list_templates():
+                print(f"  - {template}")
+            return EXIT_FAILURE
+    else:
+        spec_path = Path(args.spec)
+        spec_dict = load_spec(spec_path)
     title = spec_dict.get("report_title", "Macro Economic Data Archive")
     as_of = spec_dict.get("as_of", datetime.today().strftime("%B %d, %Y"))
     charts = parse_charts(spec_dict)

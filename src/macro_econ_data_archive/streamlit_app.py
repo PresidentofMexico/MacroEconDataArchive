@@ -10,7 +10,7 @@ import io
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass, asdict
 
 import streamlit as st
@@ -246,6 +246,137 @@ def prepare_data_summary(df: pd.DataFrame, series_id: str, periods: int = 24) ->
 
 
 # --------------------------
+# Template Loading
+# --------------------------
+
+def get_templates_dir() -> Path:
+    """Get the templates directory path."""
+    # Assuming we're in src/macro_econ_data_archive/
+    current_file = Path(__file__).resolve()
+    repo_root = current_file.parent.parent.parent
+    return repo_root / "config" / "templates"
+
+
+def discover_templates() -> List[Tuple[str, Path, Dict]]:
+    """
+    Discover all available templates in the config/templates/ directory.
+    
+    Returns:
+        List of tuples: (template_name, template_path, template_metadata)
+    """
+    templates_dir = get_templates_dir()
+    
+    if not templates_dir.exists():
+        return []
+    
+    templates = []
+    for template_file in sorted(templates_dir.glob("*.json")):
+        try:
+            with open(template_file, 'r') as f:
+                template_data = json.load(f)
+            
+            # Extract metadata if available
+            metadata = template_data.get('template_metadata', {})
+            template_name = metadata.get('name', template_file.stem.replace('_', ' ').title())
+            
+            templates.append((template_name, template_file, metadata))
+        except Exception as e:
+            st.warning(f"Could not load template {template_file.name}: {str(e)}")
+            continue
+    
+    return templates
+
+
+def load_template(template_path: Path) -> Dict:
+    """
+    Load a template JSON file.
+    
+    Args:
+        template_path: Path to the template file
+        
+    Returns:
+        Dictionary containing template data
+    """
+    with open(template_path, 'r') as f:
+        return json.load(f)
+
+
+def load_template_charts(template_path: Path) -> None:
+    """
+    Load all charts from a template into the current report.
+    
+    Args:
+        template_path: Path to the template file
+    """
+    try:
+        template_data = load_template(template_path)
+        
+        # Update report title if specified in template
+        if 'report_title' in template_data:
+            st.session_state.report_title = template_data['report_title']
+        
+        # Load each chart from the template
+        charts = template_data.get('charts', [])
+        
+        with st.spinner(f"Loading {len(charts)} charts from template..."):
+            loaded_count = 0
+            for chart_spec in charts:
+                try:
+                    # Extract chart configuration
+                    series_list = chart_spec.get('series', [])
+                    if not series_list:
+                        continue
+                    
+                    # For now, we handle single series per chart (multi-series is issue #8)
+                    first_series = series_list[0]
+                    series_id = first_series.get('id')
+                    series_label = first_series.get('label', series_id)
+                    
+                    title = chart_spec.get('page_title', f'Chart for {series_id}')
+                    frequency = chart_spec.get('frequency', 'monthly')
+                    transform = chart_spec.get('transform', 'level')
+                    units = chart_spec.get('units', '')
+                    
+                    # Fetch and add chart
+                    raw_data = fetch_fred([series_id], start=st.session_state.start_date)
+                    transformed_data = build_series_for_chart(
+                        raw_data, transform, frequency
+                    ).dropna(how="all")
+                    
+                    if transformed_data.empty:
+                        st.warning(f"No data available for {series_id}, skipping...")
+                        continue
+                    
+                    # Create chart config
+                    chart = ChartConfig(
+                        title=title,
+                        series_id=series_id,
+                        series_label=series_label,
+                        frequency=frequency,
+                        transform=transform,
+                        units=units,
+                        data=transformed_data,
+                        narrative=""
+                    )
+                    
+                    st.session_state.charts.append(chart)
+                    loaded_count += 1
+                    
+                except Exception as e:
+                    st.warning(f"Error loading chart '{chart_spec.get('page_title', 'unknown')}': {str(e)}")
+                    continue
+        
+        if loaded_count > 0:
+            st.success(f"✅ Loaded {loaded_count} charts from template!")
+            st.rerun()
+        else:
+            st.error("No charts could be loaded from the template")
+            
+    except Exception as e:
+        st.error(f"Error loading template: {str(e)}")
+
+
+# --------------------------
 # UI Components
 # --------------------------
 
@@ -265,6 +396,54 @@ def render_sidebar():
         "Start Date (YYYY-MM-DD)",
         value=st.session_state.start_date
     )
+    
+    st.sidebar.markdown("---")
+    
+    # Template loader
+    st.sidebar.subheader("📋 Build from Template")
+    
+    templates = discover_templates()
+    
+    if templates:
+        # Create a dictionary mapping display names to paths
+        template_options = {name: path for name, path, _ in templates}
+        
+        selected_template_name = st.sidebar.selectbox(
+            "Choose a template",
+            options=[""] + list(template_options.keys()),
+            format_func=lambda x: "-- Select a template --" if x == "" else x,
+            key="template_selector"
+        )
+        
+        # Show template description if one is selected
+        if selected_template_name and selected_template_name != "":
+            selected_metadata = next(
+                (meta for name, _, meta in templates if name == selected_template_name),
+                {}
+            )
+            
+            if selected_metadata.get('description'):
+                st.sidebar.caption(selected_metadata['description'])
+            
+            if selected_metadata.get('tags'):
+                tags_str = ", ".join(selected_metadata['tags'])
+                st.sidebar.caption(f"🏷️ {tags_str}")
+        
+        col1, col2 = st.sidebar.columns([2, 1])
+        with col1:
+            if st.button("📥 Load Template", use_container_width=True):
+                if selected_template_name and selected_template_name != "":
+                    template_path = template_options[selected_template_name]
+                    load_template_charts(template_path)
+                else:
+                    st.error("Please select a template first")
+        
+        with col2:
+            if st.button("🗑️ Clear", use_container_width=True):
+                st.session_state.charts = []
+                st.rerun()
+    else:
+        st.sidebar.info("No templates found in config/templates/")
     
     st.sidebar.markdown("---")
     

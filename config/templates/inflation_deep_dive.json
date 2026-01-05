@@ -1,0 +1,118 @@
+{
+  "template_metadata": {
+    "name": "Inflation Deep Dive",
+    "description": "Comprehensive inflation analysis including CPI, PCE, PPI, and wage growth",
+    "version": "1.0",
+    "tags": ["inflation", "prices", "monetary", "detailed"],
+    "author": "MacroBuilder Team",
+    "created": "2026-01-05"
+  },
+  "report_title": "Inflation Deep Dive Analysis",
+  "as_of": "Current Period",
+  "charts": [
+    {
+      "page_title": "Consumer Price Index - All Urban Consumers (Level)",
+      "series": [
+        {
+          "id": "CPIAUCSL",
+          "label": "CPI-U (1982-84=100)"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Index (1982-84=100)",
+      "notes": "Overall consumer price level. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "CPI Year-over-Year Inflation Rate",
+      "series": [
+        {
+          "id": "CPIAUCSL",
+          "label": "CPI-U YoY % Change"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Headline inflation rate. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Core CPI (Excluding Food and Energy) - YoY Change",
+      "series": [
+        {
+          "id": "CPILFESL",
+          "label": "Core CPI YoY % Change"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Core inflation excludes volatile food and energy. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Personal Consumption Expenditures Price Index - YoY Change",
+      "series": [
+        {
+          "id": "PCEPI",
+          "label": "PCE Price Index YoY % Change"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Fed's preferred inflation measure. Source: Bureau of Economic Analysis via FRED"
+    },
+    {
+      "page_title": "Core PCE (Excluding Food and Energy) - YoY Change",
+      "series": [
+        {
+          "id": "PCEPILFE",
+          "label": "Core PCE YoY % Change"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Core PCE is the Fed's primary inflation target. Source: Bureau of Economic Analysis via FRED"
+    },
+    {
+      "page_title": "Producer Price Index - Final Demand - YoY Change",
+      "series": [
+        {
+          "id": "PPIFD",
+          "label": "PPI Final Demand YoY % Change"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Wholesale price inflation. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "Average Hourly Earnings - YoY Change",
+      "series": [
+        {
+          "id": "CES0500000003",
+          "label": "Avg Hourly Earnings YoY % Change"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Wage growth indicator. Source: Bureau of Labor Statistics via FRED"
+    },
+    {
+      "page_title": "5-Year Breakeven Inflation Rate",
+      "series": [
+        {
+          "id": "T5YIE",
+          "label": "5-Year Breakeven Inflation"
+        }
+      ],
+      "transform": "level",
+      "frequency": "daily",
+      "units": "Percent",
+      "notes": "Market-implied inflation expectations. Source: Federal Reserve via FRED"
+    }
+  ]
+}
