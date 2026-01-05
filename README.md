@@ -91,11 +91,12 @@ This will install:
 **Verify installation:**
 
 ```bash
-# Test CLI tool
-python test_cli_smoke.py
+# Quick verification
+python verify_installation.py
 
-# Test Streamlit app
-python test_streamlit_smoke.py
+# Detailed smoke tests
+python test_cli_smoke.py        # Test CLI tool
+python test_streamlit_smoke.py  # Test Streamlit app
 ```
 
 ### CLI Mode

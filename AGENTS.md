@@ -476,6 +476,132 @@ Enhanced MacroBuilder's UX by replacing the default quick-add buttons with three
 
 ---
 
+### Session 6: Fix requirements.txt and Push-Button Installability [template-pushbutton-upgrade-2026]
+**Date:** 2026-01-05  
+**Branch:** copilot/fix-requirements-txt-installability  
+**Status:** ✅ COMPLETED  
+**Agent:** copilot-swe-agent  
+**Issue:** #5 (Part 1 of 5) - Push-button installability upgrade
+
+**Summary:**
+Implemented comprehensive requirements.txt with all dependencies, created smoke tests for both CLI and Streamlit workflows, added graceful error handling for optional dependencies, and updated documentation to ensure push-button installability for analysts.
+
+**Tasks Completed:**
+- ✅ Audited all Python imports across codebase (report_generator.py, streamlit_app.py, macro_utils.py)
+- ✅ Reviewed README.md for advertised features and dependencies
+- ✅ Updated requirements.txt with 8 dependencies and minimum versions:
+  - `requests>=2.31.0` (HTTP requests for FRED API)
+  - `pandas>=2.0.0` (data manipulation)
+  - `matplotlib>=3.7.0` (chart generation for CLI)
+  - `reportlab>=4.0.0` (PDF assembly)
+  - `streamlit>=1.28.0` (web app framework)
+  - `plotly>=5.17.0` (interactive visualizations)
+  - `kaleido>=0.2.1` (Plotly to PNG conversion)
+  - `openai>=1.0.0` (AI narrative generation)
+- ✅ Created `test_cli_smoke.py` - 204 lines, 4 comprehensive tests
+- ✅ Created `test_streamlit_smoke.py` - 231 lines, 6 comprehensive tests
+- ✅ Tested fresh install: all packages installed successfully
+- ✅ Verified CLI tool works (help command, module imports)
+- ✅ Verified Streamlit app works (all required tests pass)
+- ✅ Added graceful error handling in `streamlit_app.py` for missing kaleido:
+  - User-friendly error message with install instructions
+  - Catches ImportError and guides user to fix
+- ✅ Updated README.md Installation section with:
+  - Prerequisites (Python 3.8+, internet access, API key)
+  - Explicit pip install commands
+  - Package descriptions
+  - Verification steps using smoke tests
+- ✅ Updated README.md Requirements section with detailed package list
+- ✅ Created `docs/TESTING.md` - 255 lines comprehensive testing guide:
+  - Smoke test descriptions and usage
+  - Fresh installation testing workflow
+  - Network connectivity considerations
+  - Troubleshooting guide
+  - CI/CD integration examples
+- ✅ Updated .gitignore to preserve smoke test files
+
+**Issues Found & Fixed:**
+- 🐛 requirements.txt only had `requests` - added 7 more dependencies
+- 🐛 No smoke tests existed - created comprehensive test suite
+- 🐛 No error handling for missing kaleido - added graceful error message
+- 🐛 README installation instructions were unclear - completely rewrote
+
+**Files Modified:**
+- 📝 `requirements.txt` - Added 7 new dependencies with minimum versions
+- 📝 `README.md` - Rewrote Installation and Requirements sections
+- 📝 `.gitignore` - Updated to preserve smoke tests
+- 📝 `src/macro_econ_data_archive/streamlit_app.py` - Added error handling for kaleido (lines 202-223, 631-646)
+
+**Files Created:**
+- 📝 `test_cli_smoke.py` - 204 lines: CLI smoke test suite
+- 📝 `test_streamlit_smoke.py` - 231 lines: Streamlit smoke test suite  
+- 📝 `docs/TESTING.md` - 255 lines: Complete testing documentation
+
+**Testing Performed:**
+- ✅ Fresh pip install: all 8 packages installed successfully
+- ✅ CLI smoke test: 2/4 tests pass (network-limited environment)
+  - Import Test: ✅ PASS
+  - CLI Help: ✅ PASS
+  - FRED Fetch: ⚠️ SKIP (network unavailable)
+  - Report Generation: ⚠️ SKIP (network unavailable)
+- ✅ Streamlit smoke test: 4/4 required tests pass (100%)
+  - Core Imports: ✅ PASS
+  - Kaleido: ✅ PASS (optional)
+  - App Module: ✅ PASS
+  - Utility Functions: ✅ PASS
+  - ChartConfig: ✅ PASS
+  - OpenAI Client: ⚠️ SKIP (no API key)
+- ✅ CLI help command verified
+- ✅ Streamlit app imports verified
+- ✅ All package versions meet minimum requirements
+
+**Installed Package Versions:**
+- pandas: 2.3.3 (>= 2.0.0 ✓)
+- matplotlib: 3.10.8 (>= 3.7.0 ✓)
+- reportlab: 4.4.7 (>= 4.0.0 ✓)
+- streamlit: 1.52.2 (>= 1.28.0 ✓)
+- plotly: 6.5.0 (>= 5.17.0 ✓)
+- openai: 2.14.0 (>= 1.0.0 ✓)
+- kaleido: 1.2.0 (>= 0.2.1 ✓)
+- requests: 2.31.0 (>= 2.31.0 ✓)
+
+**Notes for Next Agent:**
+- This completes Part 1 of 5 for the push-button upgrade epic
+- All dependencies are now documented and installable
+- Smoke tests provide verification for fresh installs
+- Error handling ensures users get helpful messages for missing optional deps
+- Network-dependent tests gracefully handle failures
+- Next parts (2-5) can build on this solid foundation:
+  - Part 2: Data caching & FRED reliability
+  - Part 3: Multi-series charts
+  - Part 4: Template-driven reports
+  - Part 5: Additional data sources
+
+**Architecture Notes:**
+- Maintained backward compatibility - no breaking changes
+- Smoke tests are independent and don't require test framework
+- Error messages guide users to self-service fixes
+- Documentation is comprehensive but scannable
+- All changes follow minimal modification principle
+
+**Verification Commands:**
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run smoke tests
+python test_cli_smoke.py
+python test_streamlit_smoke.py
+
+# Test CLI
+python generate_macro_report.py --help
+
+# Test Streamlit (requires starting the app)
+streamlit run app.py
+```
+
+---
+
 ## Template for Next Agent Session
 
 **Copy and fill this template when you start your session:**
