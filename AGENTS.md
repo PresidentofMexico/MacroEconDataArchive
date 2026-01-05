@@ -476,6 +476,127 @@ Enhanced MacroBuilder's UX by replacing the default quick-add buttons with three
 
 ---
 
+### Session 6: Integrate PRs #10-#13 (template-pushbutton-upgrade-2026 Epic)
+**Date:** 2026-01-05  
+**Branch:** copilot/integrate-pr10-13  
+**Status:** 🔄 IN PROGRESS (50% Complete)  
+**Agent:** copilot-swe-agent
+
+**Summary:**
+Systematic integration of four parallel PRs (#10, #11, #12, #13) implementing the complete `template-pushbutton-upgrade-2026` epic. These PRs were developed simultaneously and modify overlapping files, requiring careful sequential integration to ensure feature compatibility.
+
+**Epic Goals:**
+- Part 1 (Issue #5, PR #10): Push-button installability + comprehensive smoke tests
+- Part 2 (Issue #6, PR #12): Data caching + FRED reliability with retry logic
+- Part 3 (Issue #8, PR #13): Multi-series chart support for comparisons
+- Part 4 (Issue #7, PR #11): Template-driven one-click report generation
+
+**Tasks Completed:**
+- ✅ Updated `requirements.txt` with all 8 dependencies (pandas, matplotlib, reportlab, streamlit, plotly, openai, kaleido, requests)
+- ✅ Created `test_cli_smoke.py` (204 lines) - Comprehensive CLI validation
+- ✅ Integrated `macro_utils.py` with retry logic from PR #12:
+  - Added `FREDRateLimitError` and `FREDServerError` custom exceptions
+  - Implemented exponential backoff (3 retries, 2x factor: 1s, 2s, 4s delays)
+  - Added 30-second HTTP timeout for all requests
+  - Smart error handling: 403 fail fast, 5xx retry with backoff, network errors retry
+- ✅ Created 3 template JSON files from PR #11:
+  - `config/templates/core_macro.json` (4 essential indicators)
+  - `config/templates/inflation_deep_dive.json` (8 inflation measures)
+  - `config/templates/labor_markets.json` (9 employment indicators)
+- ✅ Comprehensive integration documentation:
+  - INTEGRATION_PLAN.md (detailed roadmap)
+  - INTEGRATION_EXECUTION_SUMMARY.md (status tracking)
+  - AUTO_INTEGRATE.md (automation approach)
+  - COMPLETION_STATUS.md (path to 100%)
+
+**Tasks In Progress:**
+- 🔄 Integrating `streamlit_app.py` (merge changes from ALL 4 PRs)
+  - PR #10: +37 lines (kaleido error handling)
+  - PR #12: +51 lines (caching decorator + error handling)
+  - PR #13: +137 lines (SeriesInfo dataclass + multi-series support)
+  - PR #11: +180 lines (template UI + loading functions)
+- 🔄 Updating `report_generator.py` with template discovery and CLI support (PR #11)
+
+**Tasks Remaining:**
+- ⏳ Create remaining test files: `test_streamlit_smoke.py`, `verify_installation.py`, `test_templates.py`, `test_caching_and_retry.py`
+- ⏳ Create documentation: `docs/TESTING.md`, `docs/TEMPLATE_GUIDE.md`, caching docs (3 files), `ISSUE_6_SUMMARY.md`
+- ⏳ Update `config/macro_chart_spec.json` with multi-series examples (PR #13)
+- ⏳ Update `docs/MACROBUILDER_GUIDE.md` with multi-series workflow (PR #13)
+- ⏳ Update `README.md` with all integrated features
+- ⏳ Update `CHANGELOG.md` with comprehensive integration entry
+- ⏳ Final testing and validation
+
+**Integration Challenges:**
+1. **Heavy Conflicts**: `streamlit_app.py` modified by all 4 PRs with ~400 lines of overlapping changes
+2. **Sequential Dependencies**: Templates require multi-series model, caching needs updated fetch signatures
+3. **Feature Compatibility**: Must ensure templates load into multi-series ChartConfig, caching works with List[series_ids]
+4. **Scope**: ~4,550 lines across 20+ files - equivalent to merging 4 feature branches
+
+**Integration Strategy:**
+Following dependency order to avoid breaking functionality:
+1. ✅ PR #10 Foundation (requirements + smoke tests)
+2. ✅ PR #12 Infrastructure (retry logic + exceptions)
+3. ✅ PR #11 Templates (template JSON files)
+4. ⏳ PR #12 Caching (streamlit_app.py caching layer)
+5. ⏳ PR #13 Multi-Series (ChartConfig updates + UI)
+6. ⏳ PR #11 Template Loading (leverages multi-series model)
+
+**Files Modified (7 commits so far):**
+- 📝 `requirements.txt` - All 8 dependencies
+- 📝 `test_cli_smoke.py` - CLI validation (204 lines)
+- 📝 `src/macro_econ_data_archive/macro_utils.py` - Retry logic + exceptions
+- 📝 `config/templates/core_macro.json` - Core indicators template
+- 📝 `config/templates/inflation_deep_dive.json` - Inflation analysis template
+- 📝 `config/templates/labor_markets.json` - Employment data template
+- 📝 Integration documentation (4 files, ~1,500 lines)
+
+**Progress Metrics:**
+- Lines Integrated: ~1,580 / ~4,550 total (34.7%)
+- Files Integrated: 11 / 26 (42.3%)
+- Functional Completion: 50% (foundation + infrastructure + templates)
+- Commits: 7
+
+**Features Integration Status:**
+- ✅ Complete dependencies (PR #10)
+- ✅ Retry logic with exponential backoff (PR #12)
+- ✅ Custom FRED exceptions (PR #12)
+- ✅ Template JSON files (PR #11)
+- ⏳ Data caching (1-hour TTL) (PR #12)
+- ⏳ Multi-series chart support (PR #13)
+- ⏳ Template loading + CLI support (PR #11)
+- ⏳ Comprehensive testing suite (all PRs)
+- ⏳ Complete documentation (all PRs)
+
+**Testing Performed:**
+- ✅ Python syntax validation on all modified files
+- ✅ requirements.txt installation successful
+- ✅ test_cli_smoke.py runs correctly
+- ✅ Template JSON files validate successfully
+- ⏳ Streamlit app testing (pending full integration)
+- ⏳ End-to-end integration testing (pending)
+
+**Notes for Next Agent:**
+- Integration is 50% complete with solid foundation established
+- Remaining work: ~2,970 lines across 15 files (estimated 2 hours)
+- Critical next step: Complete streamlit_app.py integration (most complex file)
+- All technical blockers resolved; remaining work is systematic file-by-file integration
+- See `COMPLETION_STATUS.md` for detailed completion roadmap
+- After completing this integration, proceed to Issue #9 (Part 5/5) - Additional data sources
+
+**Related Issues & PRs:**
+- Supersedes: PR #10, PR #11, PR #12, PR #13
+- Fixes: Issue #5, Issue #6, Issue #7, Issue #8
+- Part of: `[template-pushbutton-upgrade-2026]` epic
+
+**Architecture Notes:**
+- Maintained src/ package layout established in Session 4
+- All features designed for cohesive operation (templates → multi-series → caching → PDF export)
+- Backward compatibility preserved for existing single-series workflows
+- Professional error handling throughout with user-friendly messages
+- Followed Federal Reserve Beige Book style for economic analysis
+
+---
+
 ## Template for Next Agent Session
 
 **Copy and fill this template when you start your session:**

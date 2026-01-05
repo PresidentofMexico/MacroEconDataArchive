@@ -1,0 +1,83 @@
+{
+  "template_metadata": {
+    "name": "Labor Markets Analysis",
+    "description": "Comprehensive employment and wages data",
+    "version": "1.0",
+    "tags": ["employment", "unemployment", "wages", "labor"]
+  },
+  "report_title": "Labor Markets Report",
+  "charts": [
+    {
+      "page_title": "Unemployment Rate",
+      "series": [{"id": "UNRATE", "label": "Unemployment Rate"}],
+      "frequency": "monthly",
+      "transform": "level",
+      "units": "Percent",
+      "notes": "Civilian unemployment rate, seasonally adjusted"
+    },
+    {
+      "page_title": "Nonfarm Payroll Employment (Month-over-Month Change)",
+      "series": [{"id": "PAYEMS", "label": "Total Nonfarm Payrolls"}],
+      "frequency": "monthly",
+      "transform": "level",
+      "units": "Thousands of Persons",
+      "notes": "Total nonfarm employment, seasonally adjusted"
+    },
+    {
+      "page_title": "Labor Force Participation Rate",
+      "series": [{"id": "CIVPART", "label": "Labor Force Participation"}],
+      "frequency": "monthly",
+      "transform": "level",
+      "units": "Percent",
+      "notes": "Civilian labor force participation rate"
+    },
+    {
+      "page_title": "Average Hourly Earnings (Year-over-Year)",
+      "series": [{"id": "CES0500000003", "label": "Average Hourly Earnings"}],
+      "frequency": "monthly",
+      "transform": "yoy",
+      "units": "Percent",
+      "notes": "Average hourly earnings of all private employees"
+    },
+    {
+      "page_title": "Average Weekly Hours",
+      "series": [{"id": "AWHAETP", "label": "Average Weekly Hours"}],
+      "frequency": "monthly",
+      "transform": "level",
+      "units": "Hours",
+      "notes": "Average weekly hours of all private employees"
+    },
+    {
+      "page_title": "Job Openings (JOLTS)",
+      "series": [{"id": "JTSJOL", "label": "Job Openings"}],
+      "frequency": "monthly",
+      "transform": "level",
+      "units": "Thousands",
+      "notes": "Total nonfarm job openings"
+    },
+    {
+      "page_title": "Initial Unemployment Claims",
+      "series": [{"id": "ICSA", "label": "Initial Claims"}],
+      "frequency": "weekly",
+      "transform": "level",
+      "units": "Thousands",
+      "notes": "Initial claims for unemployment insurance"
+    },
+    {
+      "page_title": "Employment-Population Ratio",
+      "series": [{"id": "EMRATIO", "label": "Employment-Population Ratio"}],
+      "frequency": "monthly",
+      "transform": "level",
+      "units": "Percent",
+      "notes": "Employment as percent of civilian noninstitutional population"
+    },
+    {
+      "page_title": "U-6 Underemployment Rate",
+      "series": [{"id": "U6RATE", "label": "U-6 Underemployment"}],
+      "frequency": "monthly",
+      "transform": "level",
+      "units": "Percent",
+      "notes": "Total unemployed plus marginally attached plus part-time for economic reasons"
+    }
+  ]
+}
