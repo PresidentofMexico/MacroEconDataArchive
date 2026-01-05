@@ -24,7 +24,9 @@ from .macro_utils import (
     build_series_for_chart,
     yoy,
     qoq_saar,
-    infer_yoy_periods
+    infer_yoy_periods,
+    FREDRateLimitError,
+    FREDServerError
 )
 
 # Import PDF generation from original script
@@ -135,6 +137,33 @@ Keep it professional and concise."""
     
     except Exception as e:
         return f"Error generating narrative: {str(e)}"
+
+
+# --------------------------
+# Cached Data Fetching
+# --------------------------
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_fred_cached(series_id: str, start_date: str) -> pd.DataFrame:
+    """
+    Cached wrapper for fetch_fred() to improve performance and reduce API calls.
+    
+    Cache is keyed by (series_id, start_date) to ensure data freshness when parameters change.
+    Cache expires after 1 hour (3600 seconds) to ensure reasonably fresh data.
+    
+    Args:
+        series_id: FRED series ID to fetch
+        start_date: Start date for data (YYYY-MM-DD format)
+    
+    Returns:
+        DataFrame with fetched series data
+        
+    Raises:
+        FREDRateLimitError: If rate limit is exceeded
+        FREDServerError: If server error persists
+        Exception: For other fetch failures
+    """
+    return fetch_fred([series_id], start=start_date)
 
 
 # --------------------------
@@ -280,6 +309,19 @@ def render_sidebar():
     
     st.sidebar.markdown("---")
     
+    # Cache control
+    st.sidebar.subheader("⚡ Data Cache")
+    col1, col2 = st.sidebar.columns([3, 1])
+    with col1:
+        st.caption("Cache improves performance by storing fetched data")
+    with col2:
+        if st.button("🗑️", help="Clear all cached data", key="clear_cache_btn"):
+            st.cache_data.clear()
+            st.sidebar.success("Cache cleared!")
+            st.rerun()
+    
+    st.sidebar.markdown("---")
+    
     # Chart builder
     st.sidebar.subheader("Add New Chart")
     
@@ -357,9 +399,9 @@ def add_chart_to_report(title: str, series_id: str, series_label: str,
                        frequency: str, transform: str, units: str):
     """Add a new chart to the report."""
     try:
-        # Fetch data
+        # Fetch data using cached function
         with st.spinner(f"Fetching data for {series_id}..."):
-            raw_data = fetch_fred([series_id], start=st.session_state.start_date)
+            raw_data = fetch_fred_cached(series_id, st.session_state.start_date)
             transformed_data = build_series_for_chart(
                 raw_data, transform, frequency
             ).dropna(how="all")
@@ -384,8 +426,13 @@ def add_chart_to_report(title: str, series_id: str, series_label: str,
         st.success(f"✅ Added: {title}")
         st.rerun()
         
+    except FREDRateLimitError as e:
+        st.error(f"⚠️ **FRED Rate Limit Reached**\n\n{str(e)}\n\nTip: Try again in a few minutes, or use the cache clear button if you've recently fetched this data.")
+    except FREDServerError as e:
+        st.error(f"🔧 **FRED Server Error**\n\n{str(e)}\n\nThe FRED server may be temporarily unavailable. Please try again later.")
     except Exception as e:
-        st.error(f"Error adding chart: {str(e)}")
+        st.error(f"❌ **Error adding chart**: {str(e)}")
+
 
 
 def render_main_area():
