@@ -153,6 +153,51 @@ For best results:
 - Then sector specifics
 - End with forward-looking indicators (yield curve, etc.)
 
+## Performance and Caching
+
+### Data Caching
+MacroBuilder automatically caches fetched FRED data to improve performance and reduce API load:
+
+- **Cache Duration**: Data is cached for 1 hour (3600 seconds)
+- **Cache Key**: Each series is cached by `(series_id, start_date)` combination
+- **Automatic**: Caching happens transparently - no action needed
+- **Benefits**:
+  - Faster chart additions when reusing the same series
+  - Reduced API calls to FRED
+  - Better responsiveness when building reports with many charts
+
+### Managing the Cache
+
+**When to Clear Cache:**
+- After updating the start date parameter
+- When you need the most recent data (within the hour)
+- If experiencing stale data issues
+
+**How to Clear Cache:**
+1. Look for the **⚡ Data Cache** section in the sidebar
+2. Click the **🗑️** button
+3. The cache will be cleared and fresh data will be fetched
+
+### Reliability Features
+
+**Automatic Retry Logic:**
+MacroBuilder includes intelligent retry logic for FRED data fetching:
+- **Network Errors**: Automatically retries up to 3 times with exponential backoff
+- **Server Errors (5xx)**: Retries with increasing delays (2s, 4s, 8s)
+- **Rate Limiting (403)**: Immediately shows friendly error message
+
+**Error Messages:**
+If you encounter errors, MacroBuilder provides clear guidance:
+- **⚠️ FRED Rate Limit Reached**: Wait a few minutes before retrying
+- **🔧 FRED Server Error**: FRED servers may be temporarily unavailable
+- **❌ Other Errors**: Specific error details for troubleshooting
+
+**Best Practices for Reliability:**
+- Use the cache feature to minimize API calls
+- Wait a few minutes between large batches of new series
+- Clear cache only when necessary
+- If rate limited, the cache will help you continue working with already-fetched data
+
 ## Troubleshooting
 
 ### "Series ID not found"
@@ -168,6 +213,20 @@ For best results:
 - Verify your OpenAI API key is entered correctly
 - Check that you have credits remaining in your OpenAI account
 - Try again if there was a temporary API issue
+
+### FRED Rate Limit Errors
+If you see "⚠️ FRED Rate Limit Reached":
+- **Wait**: FRED rate limits are temporary (usually 5-10 minutes)
+- **Use Cache**: Previously fetched data remains available in cache
+- **Batch Requests**: Add multiple charts at once rather than one-by-one rapidly
+- **Note**: The cache helps prevent rate limiting by reusing data
+
+### FRED Server Errors
+If you see "🔧 FRED Server Error":
+- The application automatically retried 3 times before showing this error
+- FRED servers may be experiencing temporary issues
+- Try again in a few minutes
+- Check FRED status at https://fred.stlouisfed.org/
 
 ### PDF export fails
 - Ensure all charts have valid data
