@@ -64,26 +64,47 @@ For programmatic report generation and CI/CD pipelines.
 
 ## Quick Start
 
-### CLI Mode
+### Prerequisites
 
-### 1. Install Dependencies
+- Python 3.8 or higher
+- Internet access (for fetching data from FRED API)
+- OpenAI API key (optional, for AI-powered narrative generation in MacroBuilder)
+
+### Installation
+
+**Install all dependencies:**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Or install manually:
+This will install:
+- `pandas` - Data manipulation
+- `matplotlib` - Chart generation (CLI)
+- `reportlab` - PDF assembly
+- `streamlit` - Interactive web app
+- `plotly` - Interactive visualizations
+- `openai` - AI narrative generation
+- `kaleido` - Plotly to PNG conversion (for PDF export)
+- `requests` - HTTP requests for data fetching
+
+**Verify installation:**
+
 ```bash
-pip install pandas matplotlib reportlab streamlit openai plotly
+# Test CLI tool
+python test_cli_smoke.py
+
+# Test Streamlit app
+python test_streamlit_smoke.py
 ```
 
-### 2. Generate a PDF Report
+### CLI Mode
+
+### 1. Generate a PDF Report
 
 ```bash
 python generate_macro_report.py --spec config/macro_chart_spec.json --out Macro_Economic_Data_Archive.pdf
 ```
-
-### 3. Customize Your Report
 
 Edit `config/macro_chart_spec.json` to add or modify charts. For each chart, specify:
 
@@ -146,17 +167,21 @@ This script is intentionally modular and can be extended to 100+ page reports by
 
 ## Requirements
 
-- Python 3.7+
+- Python 3.8 or higher
 - Internet access (to fetch data from FRED API)
-- OpenAI API key (for MacroBuilder AI features)
-- The following Python packages:
-  - pandas >= 2.3.3
-  - matplotlib >= 3.10.8
-  - reportlab >= 4.4.6
-  - streamlit >= 1.40.0 (for MacroBuilder)
-  - openai >= 1.57.0 (for MacroBuilder)
-  - plotly >= 5.24.0 (for MacroBuilder)
-  - kaleido >= 0.2.1 (for MacroBuilder PDF export)
+- OpenAI API key (optional, for MacroBuilder AI features)
+
+All required Python packages are listed in `requirements.txt`:
+- `pandas>=2.0.0` - Data manipulation and analysis
+- `matplotlib>=3.7.0` - Chart generation for CLI tool
+- `reportlab>=4.0.0` - PDF document assembly
+- `streamlit>=1.28.0` - Interactive web application framework
+- `plotly>=5.17.0` - Interactive data visualizations
+- `openai>=1.0.0` - AI-powered narrative generation
+- `kaleido>=0.2.1` - Plotly to static image export (for PDF)
+- `requests>=2.31.0` - HTTP library for API calls
+
+Install with: `pip install -r requirements.txt`
 
 ## Notes
 

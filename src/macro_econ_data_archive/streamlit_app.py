@@ -203,12 +203,26 @@ def save_plotly_as_png(fig: go.Figure, output_path: Path) -> None:
     """
     Save Plotly figure as PNG for PDF export.
     
+    Requires kaleido package. If not installed, raises ImportError with helpful message.
+    
     Args:
         fig: Plotly figure
         output_path: Path to save PNG file
+    
+    Raises:
+        ImportError: If kaleido is not installed
     """
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.write_image(str(output_path), width=1050, height=650, scale=2)
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.write_image(str(output_path), width=1050, height=650, scale=2)
+    except ValueError as e:
+        # Kaleido not installed
+        if "kaleido" in str(e).lower() or "image export" in str(e).lower():
+            raise ImportError(
+                "PDF export requires the 'kaleido' package. "
+                "Install it with: pip install kaleido"
+            ) from e
+        raise
 
 
 # --------------------------
@@ -613,6 +627,20 @@ def export_to_pdf():
             )
             
             st.success("✅ PDF generated successfully!")
+    
+    except ImportError as e:
+        # Handle missing kaleido gracefully
+        if "kaleido" in str(e).lower():
+            st.error(
+                "⚠️ PDF export requires the 'kaleido' package.\n\n"
+                "Please install it with:\n"
+                "```bash\n"
+                "pip install kaleido\n"
+                "```\n"
+                "Then restart the Streamlit app."
+            )
+        else:
+            st.error(f"Import error: {str(e)}")
     
     except Exception as e:
         st.error(f"Error generating PDF: {str(e)}")

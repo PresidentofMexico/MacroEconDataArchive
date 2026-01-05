@@ -29,6 +29,7 @@ ENV/
 _charts_tmp/
 *.png
 *.pdf
+# Old test file (not smoke tests)
 test_app_functionality.py
 
 # Streamlit
