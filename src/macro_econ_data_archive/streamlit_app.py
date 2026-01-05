@@ -48,11 +48,16 @@ st.set_page_config(
 # --------------------------
 
 @dataclass
+class SeriesInfo:
+    """Information for a single series in a chart."""
+    id: str
+    label: str
+
+@dataclass
 class ChartConfig:
-    """Configuration for a single chart in the report."""
+    """Configuration for a single chart in the report (supports multiple series)."""
     title: str
-    series_id: str
-    series_label: str
+    series: List[SeriesInfo]  # List of series to plot on this chart
     frequency: str  # "monthly", "quarterly", "weekly", "daily"
     transform: str  # "level", "yoy", "qoq_saar"
     units: str
@@ -144,6 +149,7 @@ Keep it professional and concise."""
 def create_plotly_chart(chart_config: ChartConfig) -> go.Figure:
     """
     Create an interactive Plotly chart from chart configuration.
+    Supports multiple series on the same chart.
     
     Args:
         chart_config: Chart configuration with data
@@ -163,14 +169,16 @@ def create_plotly_chart(chart_config: ChartConfig) -> go.Figure:
     
     fig = go.Figure()
     
-    # Add trace for the series
-    fig.add_trace(go.Scatter(
-        x=chart_config.data.index,
-        y=chart_config.data[chart_config.series_id],
-        mode='lines',
-        name=chart_config.series_label,
-        line=dict(width=2)
-    ))
+    # Add trace for each series
+    for series_info in chart_config.series:
+        if series_info.id in chart_config.data.columns:
+            fig.add_trace(go.Scatter(
+                x=chart_config.data.index,
+                y=chart_config.data[series_info.id],
+                mode='lines',
+                name=series_info.label,
+                line=dict(width=2)
+            ))
     
     # Update layout
     fig.update_layout(
@@ -215,32 +223,56 @@ def save_plotly_as_png(fig: go.Figure, output_path: Path) -> None:
 # Data Preparation
 # --------------------------
 
-def prepare_data_summary(df: pd.DataFrame, series_id: str, periods: int = 24) -> str:
+def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], periods: int = 24) -> str:
     """
-    Prepare recent data summary for LLM context.
+    Prepare recent data summary for LLM context (supports multiple series).
     
     Args:
         df: DataFrame with time series data
-        series_id: Column name to extract
+        series_list: List of series info objects
         periods: Number of recent periods to include (default: 24)
     
     Returns:
         Formatted data summary as markdown table
     """
-    if df is None or df.empty:
+    if df is None or df.empty or not series_list:
         return "No data available"
     
+    # Build table with all series
+    table_lines = ["| Date |"]
+    
+    # Add series labels as headers
+    for series_info in series_list:
+        if series_info.id in df.columns:
+            table_lines[0] += f" {series_info.label} |"
+    
+    # Add separator row
+    separator = "|------|"
+    for series_info in series_list:
+        if series_info.id in df.columns:
+            separator += "-------|"
+    table_lines.append(separator)
+    
     # Get last N periods
-    recent_data = df[series_id].dropna().tail(periods)
+    recent_data = df.tail(periods)
     
     if recent_data.empty:
         return "No data available"
     
-    # Format as markdown table
-    table_lines = ["| Date | Value |", "|------|-------|"]
-    for date, value in recent_data.items():
+    # Format each row
+    for date, row in recent_data.iterrows():
         date_str = date.strftime("%Y-%m-%d") if hasattr(date, 'strftime') else str(date)
-        table_lines.append(f"| {date_str} | {value:.2f} |")
+        row_str = f"| {date_str} |"
+        
+        for series_info in series_list:
+            if series_info.id in df.columns:
+                value = row[series_info.id]
+                if pd.notna(value):
+                    row_str += f" {value:.2f} |"
+                else:
+                    row_str += " N/A |"
+        
+        table_lines.append(row_str)
     
     return "\n".join(table_lines)
 
@@ -285,6 +317,28 @@ def render_sidebar():
     
     with st.sidebar.expander("Chart Configuration", expanded=False):
         chart_title = st.text_input("Chart Title", key="new_chart_title")
+        
+        # Initialize series list in session state if not present
+        if 'chart_builder_series' not in st.session_state:
+            st.session_state.chart_builder_series = []
+        
+        st.markdown("**Series to Include:**")
+        
+        # Show current series list
+        if st.session_state.chart_builder_series:
+            for idx, (sid, slabel) in enumerate(st.session_state.chart_builder_series):
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    st.text(f"{slabel} ({sid})")
+                with col2:
+                    if st.button("🗑️", key=f"remove_series_{idx}"):
+                        st.session_state.chart_builder_series.pop(idx)
+                        st.rerun()
+        else:
+            st.info("No series added yet. Add at least one series below.")
+        
+        # Add series inputs
+        st.markdown("**Add Series:**")
         series_id = st.text_input(
             "FRED Series ID",
             key="new_series_id",
@@ -292,6 +346,16 @@ def render_sidebar():
         )
         series_label = st.text_input("Series Label", key="new_series_label")
         
+        if st.button("➕ Add Series to List", use_container_width=True):
+            if series_id and series_label:
+                st.session_state.chart_builder_series.append((series_id, series_label))
+                st.rerun()
+            else:
+                st.error("Please enter both Series ID and Label")
+        
+        st.markdown("---")
+        
+        # Chart settings
         col1, col2 = st.columns(2)
         with col1:
             frequency = st.selectbox(
@@ -309,24 +373,28 @@ def render_sidebar():
         
         units = st.text_input("Units", key="new_units")
         
-        if st.button("➕ Add Chart to Report", use_container_width=True):
-            if chart_title and series_id and series_label:
+        if st.button("📊 Create Chart", use_container_width=True):
+            if chart_title and st.session_state.chart_builder_series:
                 add_chart_to_report(
-                    chart_title, series_id, series_label,
+                    chart_title,
+                    st.session_state.chart_builder_series,
                     frequency, transform, units
                 )
+                # Clear the series list after adding chart
+                st.session_state.chart_builder_series = []
+            elif not chart_title:
+                st.error("Please enter a chart title")
             else:
-                st.error("Please fill in all required fields")
+                st.error("Please add at least one series")
     
     st.sidebar.markdown("---")
     
-    # Quick examples
+    # Quick examples (single-series for simplicity, but can easily be extended)
     st.sidebar.subheader("Quick Add Examples")
     if st.sidebar.button("📈 Real GDP Growth", use_container_width=True):
         add_chart_to_report(
             "Real GDP Growth (Quarter over Quarter, Annualized)",
-            "GDPC1",
-            "Real GDP",
+            [("GDPC1", "Real GDP")],
             "quarterly",
             "qoq_saar",
             "Percent"
@@ -335,8 +403,7 @@ def render_sidebar():
     if st.sidebar.button("📊 Real Consumer Spending", use_container_width=True):
         add_chart_to_report(
             "Real Consumer Spending (Year-over-Year)",
-            "PCEC96",
-            "Real Personal Consumption Expenditures",
+            [("PCEC96", "Real Personal Consumption Expenditures")],
             "monthly",
             "yoy",
             "Percent"
@@ -345,34 +412,56 @@ def render_sidebar():
     if st.sidebar.button("💰 Federal Debt to GDP", use_container_width=True):
         add_chart_to_report(
             "Federal Debt as Percent of GDP",
-            "GFDEGDQ188S",
-            "Federal Debt to GDP",
+            [("GFDEGDQ188S", "Federal Debt to GDP")],
             "quarterly",
             "level",
             "Percent of GDP"
         )
+    
+    # Multi-series example
+    if st.sidebar.button("📉 Fed Funds vs 10Y Treasury", use_container_width=True):
+        add_chart_to_report(
+            "Federal Funds Rate vs 10-Year Treasury Yield",
+            [("FEDFUNDS", "Federal Funds Rate"), ("GS10", "10-Year Treasury")],
+            "monthly",
+            "level",
+            "Percent"
+        )
 
 
-def add_chart_to_report(title: str, series_id: str, series_label: str,
-                       frequency: str, transform: str, units: str):
-    """Add a new chart to the report."""
+def add_chart_to_report(title: str, series_list: List[tuple], frequency: str, transform: str, units: str):
+    """
+    Add a new chart to the report.
+    
+    Args:
+        title: Chart title
+        series_list: List of (series_id, series_label) tuples
+        frequency: Data frequency
+        transform: Transformation to apply
+        units: Y-axis units
+    """
     try:
-        # Fetch data
-        with st.spinner(f"Fetching data for {series_id}..."):
-            raw_data = fetch_fred([series_id], start=st.session_state.start_date)
+        # Extract series IDs
+        series_ids = [s[0] for s in series_list]
+        
+        # Fetch data for all series
+        with st.spinner(f"Fetching data for {len(series_ids)} series..."):
+            raw_data = fetch_fred(series_ids, start=st.session_state.start_date)
             transformed_data = build_series_for_chart(
                 raw_data, transform, frequency
             ).dropna(how="all")
         
         if transformed_data.empty:
-            st.error(f"No data available for series {series_id}")
+            st.error(f"No data available for any of the series")
             return
+        
+        # Create SeriesInfo objects
+        series_info_list = [SeriesInfo(id=s[0], label=s[1]) for s in series_list]
         
         # Create chart config
         chart = ChartConfig(
             title=title,
-            series_id=series_id,
-            series_label=series_label,
+            series=series_info_list,
             frequency=frequency,
             transform=transform,
             units=units,
@@ -476,7 +565,9 @@ def render_chart_card(idx: int, chart: ChartConfig):
         with st.expander("Chart Details"):
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Series ID", chart.series_id)
+                st.markdown("**Series:**")
+                for series_info in chart.series:
+                    st.text(f"• {series_info.label} ({series_info.id})")
             with col2:
                 st.metric("Frequency", chart.frequency)
             with col3:
@@ -551,14 +642,17 @@ def generate_analysis_for_chart(idx: int):
         # Prepare data summary
         data_summary = prepare_data_summary(
             chart.data,
-            chart.series_id,
+            chart.series,
             periods=24
         )
+        
+        # Build series names for narrative prompt
+        series_names = ", ".join([s.label for s in chart.series])
         
         # Generate narrative
         narrative = generate_narrative(
             data_summary,
-            chart.series_label,
+            series_names,
             st.session_state.openai_api_key
         )
         

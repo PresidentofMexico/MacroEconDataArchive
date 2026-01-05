@@ -131,6 +131,40 @@
       "frequency": "monthly",
       "units": "Percent",
       "notes": "Difference between 10-Year and 2-Year Treasury yields"
+    },
+    {
+      "page_title": "Short-Term vs Long-Term Interest Rates",
+      "series": [
+        {
+          "id": "FEDFUNDS",
+          "label": "Federal Funds Rate"
+        },
+        {
+          "id": "GS10",
+          "label": "10-Year Treasury Yield"
+        }
+      ],
+      "transform": "level",
+      "frequency": "monthly",
+      "units": "Percent",
+      "notes": "Comparison of short-term policy rate vs long-term market rate"
+    },
+    {
+      "page_title": "Real GDP and Consumer Spending Growth",
+      "series": [
+        {
+          "id": "GDPC1",
+          "label": "Real GDP Growth"
+        },
+        {
+          "id": "PCEC96",
+          "label": "Real Consumer Spending Growth"
+        }
+      ],
+      "transform": "yoy",
+      "frequency": "quarterly",
+      "units": "Percent (Year-over-Year)",
+      "notes": "Comparison of overall economic growth vs consumer activity"
     }
   ]
 }
