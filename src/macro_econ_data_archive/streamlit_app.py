@@ -24,7 +24,9 @@ from .macro_utils import (
     build_series_for_chart,
     yoy,
     qoq_saar,
-    infer_yoy_periods
+    infer_yoy_periods,
+    FREDRateLimitError,
+    FREDServerError
 )
 
 # Import PDF generation from original script
@@ -48,16 +50,33 @@ st.set_page_config(
 # --------------------------
 
 @dataclass
+class SeriesInfo:
+    """Information about a single series in a chart."""
+    series_id: str
+    series_label: str
+
+
+@dataclass
 class ChartConfig:
     """Configuration for a single chart in the report."""
     title: str
-    series_id: str
-    series_label: str
+    series: List[SeriesInfo]  # Now supports multiple series
     frequency: str  # "monthly", "quarterly", "weekly", "daily"
     transform: str  # "level", "yoy", "qoq_saar"
     units: str
     data: Optional[pd.DataFrame] = None
     narrative: str = ""
+    
+    # Legacy compatibility properties
+    @property
+    def series_id(self) -> str:
+        """Get first series ID for backward compatibility."""
+        return self.series[0].series_id if self.series else ""
+    
+    @property
+    def series_label(self) -> str:
+        """Get first series label for backward compatibility."""
+        return self.series[0].series_label if self.series else ""
 
 
 # --------------------------
@@ -74,6 +93,162 @@ def init_session_state():
         st.session_state.report_title = "Macro Economic Data Archive"
     if 'start_date' not in st.session_state:
         st.session_state.start_date = "2010-01-01"
+
+
+# --------------------------
+# Data Fetching with Caching
+# --------------------------
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_fred_cached(series_ids: List[str], start: str) -> pd.DataFrame:
+    """
+    Cached wrapper for fetch_fred with 1-hour TTL.
+    
+    Args:
+        series_ids: List of FRED series IDs
+        start: Start date in YYYY-MM-DD format
+    
+    Returns:
+        DataFrame with fetched data
+    
+    Raises:
+        FREDRateLimitError: If rate limit exceeded
+        FREDServerError: If server error persists
+    """
+    return fetch_fred(series_ids, start=start)
+
+
+# --------------------------
+# Template Loading
+# --------------------------
+
+def get_templates_dir() -> Path:
+    """Get the templates directory path."""
+    # Templates are in config/templates relative to repo root
+    repo_root = Path(__file__).parent.parent.parent
+    return repo_root / "config" / "templates"
+
+
+def discover_templates() -> List[Dict]:
+    """
+    Discover available template files.
+    
+    Returns:
+        List of template metadata dictionaries
+    """
+    templates_dir = get_templates_dir()
+    if not templates_dir.exists():
+        return []
+    
+    templates = []
+    for template_file in sorted(templates_dir.glob("*.json")):
+        try:
+            with open(template_file, 'r') as f:
+                template_data = json.load(f)
+            
+            # Extract metadata
+            templates.append({
+                'filename': template_file.name,
+                'path': template_file,
+                'title': template_data.get('report_title', template_file.stem),
+                'description': template_data.get('description', 'No description'),
+                'chart_count': len(template_data.get('charts', []))
+            })
+        except Exception as e:
+            st.warning(f"Could not load template {template_file.name}: {e}")
+            continue
+    
+    return templates
+
+
+def load_template(template_path: Path) -> Dict:
+    """
+    Load a template JSON file.
+    
+    Args:
+        template_path: Path to template JSON file
+    
+    Returns:
+        Template data dictionary
+    """
+    with open(template_path, 'r') as f:
+        return json.load(f)
+
+
+def load_template_charts(template_data: Dict, start_date: str) -> List[ChartConfig]:
+    """
+    Load charts from template data into ChartConfig objects.
+    
+    Args:
+        template_data: Template dictionary with 'charts' key
+        start_date: Start date for data fetching
+    
+    Returns:
+        List of ChartConfig objects with data loaded
+    """
+    charts = []
+    
+    for chart_spec in template_data.get('charts', []):
+        try:
+            # Extract series information
+            series_list = []
+            if 'series' in chart_spec:
+                # Multi-series format
+                for s in chart_spec['series']:
+                    series_list.append(SeriesInfo(
+                        series_id=s['id'],
+                        series_label=s['label']
+                    ))
+            elif 'series_id' in chart_spec:
+                # Legacy single-series format
+                series_list.append(SeriesInfo(
+                    series_id=chart_spec['series_id'],
+                    series_label=chart_spec.get('series_label', chart_spec['series_id'])
+                ))
+            
+            if not series_list:
+                st.warning(f"Skipping chart with no series: {chart_spec.get('page_title', 'Unknown')}")
+                continue
+            
+            # Fetch data for all series
+            series_ids = [s.series_id for s in series_list]
+            
+            with st.spinner(f"Loading {chart_spec.get('page_title', 'chart')}..."):
+                raw_data = fetch_fred_cached(series_ids, start=start_date)
+                transformed_data = build_series_for_chart(
+                    raw_data,
+                    transform=chart_spec.get('transform', 'level'),
+                    frequency=chart_spec.get('frequency', 'monthly')
+                ).dropna(how='all')
+            
+            if transformed_data.empty:
+                st.warning(f"No data for: {chart_spec.get('page_title', 'Unknown chart')}")
+                continue
+            
+            # Create ChartConfig
+            chart = ChartConfig(
+                title=chart_spec.get('page_title', 'Untitled Chart'),
+                series=series_list,
+                frequency=chart_spec.get('frequency', 'monthly'),
+                transform=chart_spec.get('transform', 'level'),
+                units=chart_spec.get('units', ''),
+                data=transformed_data,
+                narrative=chart_spec.get('notes', '')
+            )
+            
+            charts.append(chart)
+            
+        except FREDRateLimitError as e:
+            st.error(f"FRED rate limit exceeded: {e}")
+            break
+        except FREDServerError as e:
+            st.error(f"FRED server error: {e}")
+            continue
+        except Exception as e:
+            st.error(f"Error loading chart '{chart_spec.get('page_title', 'Unknown')}': {e}")
+            continue
+    
+    return charts
 
 
 # --------------------------
@@ -144,6 +319,7 @@ Keep it professional and concise."""
 def create_plotly_chart(chart_config: ChartConfig) -> go.Figure:
     """
     Create an interactive Plotly chart from chart configuration.
+    Supports both single and multi-series charts.
     
     Args:
         chart_config: Chart configuration with data
@@ -163,14 +339,16 @@ def create_plotly_chart(chart_config: ChartConfig) -> go.Figure:
     
     fig = go.Figure()
     
-    # Add trace for the series
-    fig.add_trace(go.Scatter(
-        x=chart_config.data.index,
-        y=chart_config.data[chart_config.series_id],
-        mode='lines',
-        name=chart_config.series_label,
-        line=dict(width=2)
-    ))
+    # Add trace for each series
+    for series_info in chart_config.series:
+        if series_info.series_id in chart_config.data.columns:
+            fig.add_trace(go.Scatter(
+                x=chart_config.data.index,
+                y=chart_config.data[series_info.series_id],
+                mode='lines',
+                name=series_info.series_label,
+                line=dict(width=2)
+            ))
     
     # Update layout
     fig.update_layout(
@@ -202,26 +380,39 @@ def create_plotly_chart(chart_config: ChartConfig) -> go.Figure:
 def save_plotly_as_png(fig: go.Figure, output_path: Path) -> None:
     """
     Save Plotly figure as PNG for PDF export.
+    Handles Kaleido installation issues gracefully.
     
     Args:
         fig: Plotly figure
         output_path: Path to save PNG file
+    
+    Raises:
+        ImportError: If Kaleido is not properly installed
     """
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.write_image(str(output_path), width=1050, height=650, scale=2)
+    try:
+        fig.write_image(str(output_path), width=1050, height=650, scale=2)
+    except Exception as e:
+        if 'kaleido' in str(e).lower():
+            raise ImportError(
+                "Kaleido is required for PDF export but not properly installed. "
+                "Please reinstall with: pip install -U kaleido"
+            ) from e
+        raise
 
 
 # --------------------------
 # Data Preparation
 # --------------------------
 
-def prepare_data_summary(df: pd.DataFrame, series_id: str, periods: int = 24) -> str:
+def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], periods: int = 24) -> str:
     """
     Prepare recent data summary for LLM context.
+    Supports both single and multi-series data.
     
     Args:
         df: DataFrame with time series data
-        series_id: Column name to extract
+        series_list: List of SeriesInfo objects
         periods: Number of recent periods to include (default: 24)
     
     Returns:
@@ -230,17 +421,40 @@ def prepare_data_summary(df: pd.DataFrame, series_id: str, periods: int = 24) ->
     if df is None or df.empty:
         return "No data available"
     
+    # Get series IDs that exist in the dataframe
+    available_series = [s for s in series_list if s.series_id in df.columns]
+    
+    if not available_series:
+        return "No data available"
+    
     # Get last N periods
-    recent_data = df[series_id].dropna().tail(periods)
+    recent_data = df[[s.series_id for s in available_series]].dropna(how='all').tail(periods)
     
     if recent_data.empty:
         return "No data available"
     
     # Format as markdown table
-    table_lines = ["| Date | Value |", "|------|-------|"]
-    for date, value in recent_data.items():
-        date_str = date.strftime("%Y-%m-%d") if hasattr(date, 'strftime') else str(date)
-        table_lines.append(f"| {date_str} | {value:.2f} |")
+    if len(available_series) == 1:
+        # Single series - simple two-column table
+        table_lines = ["| Date | Value |", "|------|-------|"]
+        for date, row in recent_data.iterrows():
+            date_str = date.strftime("%Y-%m-%d") if hasattr(date, 'strftime') else str(date)
+            value = row[available_series[0].series_id]
+            if pd.notna(value):
+                table_lines.append(f"| {date_str} | {value:.2f} |")
+    else:
+        # Multi-series - table with column for each series
+        header = "| Date | " + " | ".join([s.series_label for s in available_series]) + " |"
+        separator = "|------|" + "|".join(["-------" for _ in available_series]) + "|"
+        table_lines = [header, separator]
+        
+        for date, row in recent_data.iterrows():
+            date_str = date.strftime("%Y-%m-%d") if hasattr(date, 'strftime') else str(date)
+            values = []
+            for s in available_series:
+                value = row[s.series_id]
+                values.append(f"{value:.2f}" if pd.notna(value) else "N/A")
+            table_lines.append(f"| {date_str} | " + " | ".join(values) + " |")
     
     return "\n".join(table_lines)
 
@@ -277,6 +491,38 @@ def render_sidebar():
         help="Required for AI-powered narrative generation"
     )
     st.session_state.openai_api_key = api_key
+    
+    st.sidebar.markdown("---")
+    
+    # Template loading
+    st.sidebar.subheader("📋 Load Template")
+    templates = discover_templates()
+    
+    if templates:
+        template_options = {t['title']: t for t in templates}
+        selected_template = st.sidebar.selectbox(
+            "Choose a template",
+            options=["-- Select Template --"] + list(template_options.keys()),
+            key="template_selector"
+        )
+        
+        if selected_template != "-- Select Template --":
+            template_info = template_options[selected_template]
+            st.sidebar.markdown(f"**Description:** {template_info['description']}")
+            st.sidebar.markdown(f"**Charts:** {template_info['chart_count']}")
+            
+            if st.sidebar.button("📥 Load Template", use_container_width=True):
+                load_template_into_report(template_info['path'])
+    else:
+        st.sidebar.info("No templates found in config/templates/")
+    
+    st.sidebar.markdown("---")
+    
+    # Cache management
+    st.sidebar.subheader("⚙️ Settings")
+    if st.sidebar.button("🔄 Clear Data Cache", use_container_width=True):
+        fetch_fred_cached.clear()
+        st.sidebar.success("Cache cleared!")
     
     st.sidebar.markdown("---")
     
@@ -357,9 +603,9 @@ def add_chart_to_report(title: str, series_id: str, series_label: str,
                        frequency: str, transform: str, units: str):
     """Add a new chart to the report."""
     try:
-        # Fetch data
+        # Fetch data using cached wrapper
         with st.spinner(f"Fetching data for {series_id}..."):
-            raw_data = fetch_fred([series_id], start=st.session_state.start_date)
+            raw_data = fetch_fred_cached([series_id], start=st.session_state.start_date)
             transformed_data = build_series_for_chart(
                 raw_data, transform, frequency
             ).dropna(how="all")
@@ -368,11 +614,10 @@ def add_chart_to_report(title: str, series_id: str, series_label: str,
             st.error(f"No data available for series {series_id}")
             return
         
-        # Create chart config
+        # Create chart config with multi-series format
         chart = ChartConfig(
             title=title,
-            series_id=series_id,
-            series_label=series_label,
+            series=[SeriesInfo(series_id=series_id, series_label=series_label)],
             frequency=frequency,
             transform=transform,
             units=units,
@@ -384,8 +629,43 @@ def add_chart_to_report(title: str, series_id: str, series_label: str,
         st.success(f"✅ Added: {title}")
         st.rerun()
         
+    except FREDRateLimitError as e:
+        st.error(f"FRED rate limit exceeded: {e}")
+    except FREDServerError as e:
+        st.error(f"FRED server error: {e}")
     except Exception as e:
         st.error(f"Error adding chart: {str(e)}")
+
+
+def load_template_into_report(template_path: Path):
+    """Load charts from a template file into the current report."""
+    try:
+        with st.spinner("Loading template..."):
+            # Load template data
+            template_data = load_template(template_path)
+            
+            # Update report title if specified in template
+            if 'report_title' in template_data:
+                st.session_state.report_title = template_data['report_title']
+            
+            # Load all charts from template
+            charts = load_template_charts(template_data, st.session_state.start_date)
+            
+            if charts:
+                # Replace or append charts
+                if st.session_state.charts:
+                    # Ask user if they want to replace or append
+                    st.session_state.charts.extend(charts)
+                else:
+                    st.session_state.charts = charts
+                
+                st.success(f"✅ Loaded {len(charts)} chart(s) from template")
+                st.rerun()
+            else:
+                st.warning("No charts could be loaded from template")
+                
+    except Exception as e:
+        st.error(f"Error loading template: {str(e)}")
 
 
 def render_main_area():
@@ -476,11 +756,19 @@ def render_chart_card(idx: int, chart: ChartConfig):
         with st.expander("Chart Details"):
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Series ID", chart.series_id)
+                # Show all series IDs
+                series_ids = ", ".join([s.series_id for s in chart.series])
+                st.metric("Series ID(s)", series_ids if len(series_ids) < 40 else f"{len(chart.series)} series")
             with col2:
                 st.metric("Frequency", chart.frequency)
             with col3:
                 st.metric("Transform", chart.transform)
+            
+            # If multiple series, show them in a list
+            if len(chart.series) > 1:
+                st.markdown("**Series in this chart:**")
+                for s in chart.series:
+                    st.markdown(f"- {s.series_label} ({s.series_id})")
         
         # Narrative section
         st.markdown("**Economic Analysis:**")
@@ -548,17 +836,18 @@ def generate_analysis_for_chart(idx: int):
     chart = st.session_state.charts[idx]
     
     with st.spinner("Generating analysis..."):
-        # Prepare data summary
+        # Prepare data summary with multi-series support
         data_summary = prepare_data_summary(
             chart.data,
-            chart.series_id,
+            chart.series,
             periods=24
         )
         
-        # Generate narrative
+        # Generate narrative (use first series label for context)
+        series_name = chart.series[0].series_label if chart.series else "Economic Indicator"
         narrative = generate_narrative(
             data_summary,
-            chart.series_label,
+            series_name,
             st.session_state.openai_api_key
         )
         
