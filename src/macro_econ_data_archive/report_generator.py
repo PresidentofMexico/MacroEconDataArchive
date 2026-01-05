@@ -150,6 +150,70 @@ def assemble_pdf(title: str, as_of: str, png_paths: List[Path], out_pdf: Path) -
 # Main
 # --------------------------
 
+def get_templates_dir() -> Path:
+    """Get the templates directory path."""
+    repo_root = Path(__file__).parent.parent.parent
+    return repo_root / "config" / "templates"
+
+
+def discover_templates() -> List[Dict]:
+    """
+    Discover available template files.
+    
+    Returns:
+        List of template metadata dictionaries
+    """
+    templates_dir = get_templates_dir()
+    if not templates_dir.exists():
+        return []
+    
+    templates = []
+    for template_file in sorted(templates_dir.glob("*.json")):
+        try:
+            with open(template_file, 'r') as f:
+                template_data = json.load(f)
+            
+            templates.append({
+                'filename': template_file.name,
+                'path': template_file,
+                'title': template_data.get('report_title', template_file.stem),
+                'description': template_data.get('description', 'No description'),
+                'chart_count': len(template_data.get('charts', []))
+            })
+        except Exception:
+            continue
+    
+    return templates
+
+
+def load_template(template_name: str) -> Path:
+    """
+    Load a template by name.
+    
+    Args:
+        template_name: Template filename (e.g., 'core_macro.json') or stem (e.g., 'core_macro')
+    
+    Returns:
+        Path to template file
+    
+    Raises:
+        FileNotFoundError: If template not found
+    """
+    templates_dir = get_templates_dir()
+    
+    # Try as-is first
+    template_path = templates_dir / template_name
+    if template_path.exists():
+        return template_path
+    
+    # Try adding .json extension
+    template_path = templates_dir / f"{template_name}.json"
+    if template_path.exists():
+        return template_path
+    
+    raise FileNotFoundError(f"Template '{template_name}' not found in {templates_dir}")
+
+
 def load_spec(path: Path) -> Dict:
     with open(path, "r") as f:
         return json.load(f)
@@ -169,14 +233,72 @@ def parse_charts(spec_dict: Dict) -> List[ChartSpec]:
     return charts
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--spec", required=True, help="Path to chart specification JSON.")
-    ap.add_argument("--out", required=True, help="Output PDF file.")
+    ap = argparse.ArgumentParser(
+        description="Generate macro economic reports from FRED data"
+    )
+    
+    # Input options (mutually exclusive)
+    input_group = ap.add_mutually_exclusive_group(required=False)
+    input_group.add_argument(
+        "--spec",
+        help="Path to chart specification JSON file (legacy mode)"
+    )
+    input_group.add_argument(
+        "--template",
+        help="Template name (e.g., 'core_macro' or 'core_macro.json')"
+    )
+    input_group.add_argument(
+        "--list-templates",
+        action="store_true",
+        help="List available templates and exit"
+    )
+    
+    # Output options
+    ap.add_argument("--out", help="Output PDF file (required unless --list-templates)")
     ap.add_argument("--start", default="1990-01-01", help="Start date for data pulls.")
     ap.add_argument("--tmpdir", default="_charts_tmp", help="Temporary folder for chart PNGs.")
+    
     args = ap.parse_args()
+    
+    # Handle --list-templates
+    if args.list_templates:
+        templates = discover_templates()
+        if not templates:
+            print("No templates found in config/templates/")
+            return EXIT_SUCCESS
+        
+        print("Available templates:")
+        print("-" * 70)
+        for t in templates:
+            print(f"  {t['filename']:<25} {t['title']}")
+            print(f"    Description: {t['description']}")
+            print(f"    Charts: {t['chart_count']}")
+            print()
+        return EXIT_SUCCESS
+    
+    # Validate required arguments
+    if not args.out:
+        print("Error: --out is required")
+        return EXIT_FAILURE
+    
+    if not args.spec and not args.template:
+        print("Error: Either --spec or --template is required")
+        return EXIT_FAILURE
+    
+    # Determine spec path
+    if args.template:
+        try:
+            spec_path = load_template(args.template)
+            print(f"Using template: {spec_path}")
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            return EXIT_FAILURE
+    else:
+        spec_path = Path(args.spec)
+        if not spec_path.exists():
+            print(f"Error: Spec file not found: {spec_path}")
+            return EXIT_FAILURE
 
-    spec_path = Path(args.spec)
     spec_dict = load_spec(spec_path)
     title = spec_dict.get("report_title", "Macro Economic Data Archive")
     as_of = spec_dict.get("as_of", datetime.today().strftime("%B %d, %Y"))
