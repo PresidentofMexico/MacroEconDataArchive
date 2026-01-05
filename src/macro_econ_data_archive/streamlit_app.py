@@ -216,13 +216,20 @@ def save_plotly_as_png(fig: go.Figure, output_path: Path) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         fig.write_image(str(output_path), width=1050, height=650, scale=2)
     except ValueError as e:
-        # Kaleido not installed
-        if "kaleido" in str(e).lower() or "image export" in str(e).lower():
+        # Kaleido not installed or other Plotly error
+        error_str = str(e).lower()
+        if "kaleido" in error_str or "image export" in error_str or "orca" in error_str:
             raise ImportError(
                 "PDF export requires the 'kaleido' package. "
                 "Install it with: pip install kaleido"
             ) from e
         raise
+    except ImportError as e:
+        # Catch direct import errors from plotly
+        raise ImportError(
+            "PDF export requires the 'kaleido' package. "
+            "Install it with: pip install kaleido"
+        ) from e
 
 
 # --------------------------
