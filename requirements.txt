@@ -1,1 +1,15 @@
+# Core dependencies for data fetching and manipulation
 requests>=2.31.0
+pandas>=2.0.0
+
+# Visualization and PDF generation (CLI tool)
+matplotlib>=3.7.0
+reportlab>=4.0.0
+
+# Streamlit web app dependencies
+streamlit>=1.28.0
+plotly>=5.17.0
+kaleido>=0.2.1
+
+# AI-powered narrative generation
+openai>=1.0.0
