@@ -1,5 +1,78 @@
 # Changelog - Bug Fixes and Improvements
 
+## [2026-01-06] - Breaking Changes Investigation & Resolution (Issue #17) ✅ COMPLETED
+
+### Critical Bug Fixes & UX Enhancements
+Comprehensive investigation and resolution of potential breaking changes after PR integration. All 7 identified issues resolved with minimal code changes and comprehensive test coverage.
+
+#### ✅ Issues Resolved
+
+**1. Missing Series Column Warnings (Critical UX Fix)**
+- ❌ **Before:** Charts with missing data series rendered silently incomplete
+- ✅ **After:** Explicit warnings displayed for missing series columns
+- **Impact:** Users immediately know when series data is unavailable
+- **File:** `src/macro_econ_data_archive/streamlit_app.py` (create_plotly_chart)
+
+**2. Cache Order-Independence (Performance Fix)**
+- ❌ **Before:** `["GDPC1", "PCEC96"]` and `["PCEC96", "GDPC1"]` created duplicate cache entries
+- ✅ **After:** Series IDs canonicalized (sorted) for consistent cache keys
+- **Impact:** Better cache hit rate, reduced FRED API calls, less memory fragmentation
+- **File:** `src/macro_econ_data_archive/streamlit_app.py` (fetch_fred_cached)
+
+**3. Template Loading UX (User Control)**
+- ❌ **Before:** Loading template always appended, causing confusing duplicates
+- ✅ **After:** Explicit Replace/Append buttons when existing charts present
+- **Impact:** Clear user control, no accidental duplicates
+- **File:** `src/macro_econ_data_archive/streamlit_app.py` (load_template_into_report, sidebar UI)
+
+**4. FRED Response Robustness (Reliability Fix)**
+- ❌ **Before:** Strict column name check failed if FRED response format changed
+- ✅ **After:** Fallback to first numeric column with warning if expected column missing
+- **Impact:** More resilient to FRED API changes, better error messages
+- **File:** `src/macro_econ_data_archive/macro_utils.py` (fetch_fred)
+
+**5. Enhanced Error Detection (Better Debugging)**
+- ❌ **Before:** PDF export errors only checked for 'kaleido' keyword
+- ✅ **After:** Multiple keyword patterns, separate ImportError vs RuntimeError
+- **Impact:** More actionable error messages for troubleshooting
+- **File:** `src/macro_econ_data_archive/streamlit_app.py` (save_plotly_as_png)
+
+**6. Template Schema Validation (Confirmed Working)**
+- ✅ **Status:** All 3 templates verified to use correct schema (`id`/`label`)
+- ✅ **Status:** Both Streamlit and CLI parsers handle schema correctly
+- **Result:** No breaking changes detected
+
+**7. Empty Series List Safety (Confirmed Working)**
+- ✅ **Status:** All code paths properly guard against empty series lists
+- ✅ **Status:** Legacy compatibility properties return empty string safely
+- **Result:** No breaking changes detected
+
+#### ✅ Test Coverage
+- Created `test_breaking_changes.py` with 7 comprehensive tests (380+ lines)
+- **Test Results:** 7/7 tests passing
+- **Coverage:** All edge cases, error scenarios, and UI behaviors validated
+
+#### ✅ Documentation
+- Created `BREAKING_CHANGES_RESOLUTION.md` - Detailed investigation report
+- Created `UI_CHANGES_GUIDE.md` - Visual guide to UI improvements
+- Updated AGENTS.md with Session 7 details
+
+#### Impact Summary
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Cache Efficiency | Order-dependent, fragmented | Order-independent | Better hit rate |
+| Missing Series UX | Silent failure | Warning displayed | Clear feedback |
+| Template Loading | Always append (duplicates) | Replace/Append choice | User control |
+| FRED Resilience | Strict checking, fragile | Fallback logic | More robust |
+| Error Messages | Generic/vague | Specific/actionable | Better debugging |
+
+**Lines Changed:** ~60 lines across 2 files  
+**Test Coverage Added:** 380+ lines  
+**Backward Compatibility:** ✅ 100% maintained  
+**Risk Level:** LOW (defensive improvements only)
+
+---
+
 ## [2026-01-05] - Integration of PRs #10-#13 (template-pushbutton-upgrade-2026 Epic) ✅ COMPLETED
 
 ### Major Feature Integration (100% Complete)

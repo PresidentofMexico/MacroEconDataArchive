@@ -103,19 +103,28 @@ def init_session_state():
 def fetch_fred_cached(series_ids: List[str], start: str) -> pd.DataFrame:
     """
     Cached wrapper for fetch_fred with 1-hour TTL.
+    Canonicalizes series order to ensure consistent caching.
     
     Args:
         series_ids: List of FRED series IDs
         start: Start date in YYYY-MM-DD format
     
     Returns:
-        DataFrame with fetched data
+        DataFrame with fetched data (columns in sorted order by series ID)
     
     Raises:
         FREDRateLimitError: If rate limit exceeded
         FREDServerError: If server error persists
+    
+    Note:
+        Series IDs are sorted alphabetically to ensure cache hits regardless
+        of the order in which series are requested. This prevents cache 
+        fragmentation for semantically identical requests.
     """
-    return fetch_fred(series_ids, start=start)
+    # Sort series IDs for cache consistency
+    # ["PCEC96", "GDPC1"] and ["GDPC1", "PCEC96"] will use the same cache entry
+    canonical_series_ids = sorted(series_ids)
+    return fetch_fred(canonical_series_ids, start=start)
 
 
 # --------------------------
@@ -340,6 +349,7 @@ def create_plotly_chart(chart_config: ChartConfig) -> go.Figure:
     fig = go.Figure()
     
     # Add trace for each series
+    missing_series = []
     for series_info in chart_config.series:
         if series_info.series_id in chart_config.data.columns:
             fig.add_trace(go.Scatter(
@@ -349,6 +359,15 @@ def create_plotly_chart(chart_config: ChartConfig) -> go.Figure:
                 name=series_info.series_label,
                 line=dict(width=2)
             ))
+        else:
+            missing_series.append(series_info.series_id)
+    
+    # Warn about missing series (important for debugging)
+    if missing_series:
+        st.warning(
+            f"⚠️ Chart '{chart_config.title}': Missing data columns for series: {', '.join(missing_series)}. "
+            f"These series will not appear in the chart."
+        )
     
     # Update layout
     fig.update_layout(
@@ -393,12 +412,21 @@ def save_plotly_as_png(fig: go.Figure, output_path: Path) -> None:
     try:
         fig.write_image(str(output_path), width=1050, height=650, scale=2)
     except Exception as e:
-        if 'kaleido' in str(e).lower():
+        error_str = str(e).lower()
+        # Check for various Kaleido-related errors
+        kaleido_keywords = ['kaleido', 'orca', 'image export', 'write_image']
+        if any(keyword in error_str for keyword in kaleido_keywords):
             raise ImportError(
                 "Kaleido is required for PDF export but not properly installed. "
-                "Please reinstall with: pip install -U kaleido"
+                "Please reinstall with: pip install -U kaleido\n"
+                f"Original error: {e}"
             ) from e
-        raise
+        # For other errors, provide more context
+        raise RuntimeError(
+            f"Failed to save chart as PNG for PDF export. "
+            f"This may be due to missing system dependencies (e.g., chromium). "
+            f"Error: {e}"
+        ) from e
 
 
 # --------------------------
@@ -511,8 +539,18 @@ def render_sidebar():
             st.sidebar.markdown(f"**Description:** {template_info['description']}")
             st.sidebar.markdown(f"**Charts:** {template_info['chart_count']}")
             
-            if st.sidebar.button("📥 Load Template", use_container_width=True):
-                load_template_into_report(template_info['path'])
+            # If there are existing charts, let user choose replace vs append
+            if st.session_state.charts:
+                col1, col2 = st.sidebar.columns(2)
+                with col1:
+                    if st.button("📥 Replace", use_container_width=True, help="Replace all existing charts"):
+                        load_template_into_report(template_info['path'], replace_existing=True)
+                with col2:
+                    if st.button("➕ Append", use_container_width=True, help="Add to existing charts"):
+                        load_template_into_report(template_info['path'], replace_existing=False)
+            else:
+                if st.sidebar.button("📥 Load Template", use_container_width=True):
+                    load_template_into_report(template_info['path'], replace_existing=False)
     else:
         st.sidebar.info("No templates found in config/templates/")
     
@@ -637,8 +675,14 @@ def add_chart_to_report(title: str, series_id: str, series_label: str,
         st.error(f"Error adding chart: {str(e)}")
 
 
-def load_template_into_report(template_path: Path):
-    """Load charts from a template file into the current report."""
+def load_template_into_report(template_path: Path, replace_existing: bool = False):
+    """
+    Load charts from a template file into the current report.
+    
+    Args:
+        template_path: Path to the template JSON file
+        replace_existing: If True, replace existing charts. If False, append.
+    """
     try:
         with st.spinner("Loading template..."):
             # Load template data
@@ -652,14 +696,15 @@ def load_template_into_report(template_path: Path):
             charts = load_template_charts(template_data, st.session_state.start_date)
             
             if charts:
-                # Replace or append charts
-                if st.session_state.charts:
-                    # Ask user if they want to replace or append
-                    st.session_state.charts.extend(charts)
-                else:
+                # Replace or append based on parameter
+                if replace_existing or not st.session_state.charts:
                     st.session_state.charts = charts
+                    action = "Loaded"
+                else:
+                    st.session_state.charts.extend(charts)
+                    action = "Appended"
                 
-                st.success(f"✅ Loaded {len(charts)} chart(s) from template")
+                st.success(f"✅ {action} {len(charts)} chart(s) from template")
                 st.rerun()
             else:
                 st.warning("No charts could be loaded from template")
