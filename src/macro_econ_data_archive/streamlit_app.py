@@ -898,6 +898,9 @@ def generate_analysis_for_chart(idx: int):
         
         # Update chart
         st.session_state.charts[idx].narrative = narrative
+        # Force the text area widget to update its display value
+        if f"narrative_{idx}" in st.session_state:
+            st.session_state[f"narrative_{idx}"] = narrative
         st.rerun()
 
 
