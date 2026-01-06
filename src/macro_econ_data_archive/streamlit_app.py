@@ -795,7 +795,7 @@ def render_chart_card(idx: int, chart: ChartConfig):
         
         # Chart visualization
         fig = create_plotly_chart(chart)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=f"chart_builder_{idx}")
         
         # Show metadata
         with st.expander("Chart Details"):
@@ -843,7 +843,7 @@ def render_preview_view():
         st.markdown(f"### {chart.title}")
         
         fig = create_plotly_chart(chart)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=f"chart_preview_{idx}")
         
         if chart.narrative:
             st.markdown(chart.narrative)
