@@ -42,8 +42,8 @@ def test_cli_help():
     """Test that CLI can show help message."""
     print("\nTesting CLI help command...")
     try:
-        # Ensure src is on path
-        repo_root = Path(__file__).resolve().parent
+        # Ensure src is on path (go up from tests/ to repo root)
+        repo_root = Path(__file__).resolve().parent.parent
         src_dir = repo_root / "src"
         if str(src_dir) not in sys.path:
             sys.path.insert(0, str(src_dir))
@@ -75,7 +75,7 @@ def test_fred_fetch():
     """Test that we can fetch data from FRED."""
     print("\nTesting FRED data fetch...")
     try:
-        repo_root = Path(__file__).resolve().parent
+        repo_root = Path(__file__).resolve().parent.parent
         src_dir = repo_root / "src"
         if str(src_dir) not in sys.path:
             sys.path.insert(0, str(src_dir))
@@ -99,7 +99,7 @@ def test_minimal_report_generation():
     """Test minimal report generation."""
     print("\nTesting minimal report generation...")
     try:
-        repo_root = Path(__file__).resolve().parent
+        repo_root = Path(__file__).resolve().parent.parent
         src_dir = repo_root / "src"
         if str(src_dir) not in sys.path:
             sys.path.insert(0, str(src_dir))

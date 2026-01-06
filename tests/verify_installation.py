@@ -106,8 +106,8 @@ def run_cli_smoke_test():
     print("\nRunning CLI smoke test...")
     
     try:
-        # Test import
-        sys.path.insert(0, str(Path(__file__).parent / "src"))
+        # Test import (go up from tests/ to repo root)
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
         from macro_econ_data_archive.report_generator import discover_templates
         
         # Test template discovery
@@ -126,7 +126,7 @@ def run_streamlit_import_test():
     print("\nTesting Streamlit app import...")
     
     try:
-        sys.path.insert(0, str(Path(__file__).parent / "src"))
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
         from macro_econ_data_archive import streamlit_app
         
         # Check key functions exist
