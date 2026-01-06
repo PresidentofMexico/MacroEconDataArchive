@@ -13,8 +13,8 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 import pandas as pd
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+# Add src to path (go up from tests/ to repo root)
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
 def test_empty_series_list_safety():
@@ -88,7 +88,7 @@ def test_template_schema_validation():
     print("\nTesting template schema validation...")
     
     try:
-        templates_dir = Path(__file__).parent / "config" / "templates"
+        templates_dir = Path(__file__).parent.parent / "config" / "templates"
         
         required_keys = ["id", "label"]
         errors = []

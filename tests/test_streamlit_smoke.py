@@ -12,8 +12,8 @@ from pathlib import Path
 import importlib
 import json
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+# Add src to path for imports (go up from tests/ to repo root)
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
 def test_imports():
