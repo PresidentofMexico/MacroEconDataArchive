@@ -178,8 +178,27 @@ def fetch_fred(
                 raw[date_col] = pd.to_datetime(raw[date_col], errors="coerce")
                 raw = raw.dropna(subset=[date_col]).set_index(date_col).sort_index()
 
+                # Try to find the series column - prefer exact match, fallback to first numeric column
                 if sid not in raw.columns:
-                    raise ValueError(f"Unexpected FRED response for series '{sid}': missing '{sid}' column")
+                    # Fallback: use first non-date numeric column if available
+                    numeric_cols = [col for col in raw.columns if col != date_col and 
+                                   pd.api.types.is_numeric_dtype(raw[col])]
+                    if numeric_cols:
+                        actual_col = numeric_cols[0]
+                        # Warn but continue - this handles cases where FRED returns differently named columns
+                        import warnings
+                        warnings.warn(
+                            f"FRED response for '{sid}' missing expected column, "
+                            f"using '{actual_col}' instead. This may indicate a FRED API change.",
+                            UserWarning
+                        )
+                        # Rename to expected column name for consistency downstream
+                        raw[sid] = raw[actual_col]
+                    else:
+                        raise ValueError(
+                            f"Unexpected FRED response for series '{sid}': missing '{sid}' column "
+                            f"and no numeric fallback columns found. Available columns: {list(raw.columns)}"
+                        )
 
                 s = safe_to_numeric(raw[sid])
                 s = s[s.index >= start_ts]
