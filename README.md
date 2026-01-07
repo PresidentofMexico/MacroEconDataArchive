@@ -1,10 +1,26 @@
 # Macro Economic Data Archive
 
 A powerful toolkit for creating chart-driven macroeconomic reports from public time series data. Available in two modes:
-- **🚀 MacroBuilder (Streamlit App)**: Interactive web app with AI-powered insights, data caching, multi-series charts, and templates
+- **🚀 MacroBuilder (Streamlit App)**: Interactive web app with AI-powered insights, data caching, multi-series charts, templates, and configuration persistence
 - **⚙️ CLI Tool**: Command-line PDF generator for automated workflows with template support
+- **🐳 Docker**: Ready-to-deploy containerized application
 
-## ✨ Latest Features (2026-01-05) ✅ COMPLETED
+## ✨ Latest Features (2026-01-07) ✅ NEW
+
+**💾 Save & Load Configurations**:
+- Save current report configuration as JSON ✅
+- Download configurations for backup/sharing ✅
+- Load saved configurations to continue work ✅
+- Import configurations via drag-and-drop ✅
+- Configurations compatible with template format ✅
+
+**🐳 Docker Support**:
+- Production-ready Dockerfile ✅
+- Optimized with Kaleido/Plotly dependencies ✅
+- Health checks and environment configuration ✅
+- See [Docker Guide](docs/DOCKER_GUIDE.md) for deployment instructions ✅
+
+## ✨ Previous Features (2026-01-05) ✅ COMPLETED
 
 **🎯 Template System** - One-click report generation with 3 pre-built templates:
 - Core Macro (4 indicators): GDP, inflation, unemployment, interest rates
@@ -44,10 +60,12 @@ Build custom economic reports interactively with AI-powered analysis.
 - ⚡ **Data Caching**: 1-hour TTL cache with 10-200x speedup for repeated queries
 - 🔄 **Smart Retry Logic**: Exponential backoff handles transient API errors
 - 📈 **Multi-Series Charts**: Compare multiple indicators on one chart
+- 💾 **Save & Load**: Export and import report configurations as JSON
 - 🤖 **AI-Powered Analysis**: Generate professional economic narratives using ChatGPT 4o-mini
 - 🎨 **Interactive Visualizations**: Plotly charts with hover details and zoom
 - 📝 **Report Assembly**: Reorder charts, edit narratives, preview final report
 - 📥 **PDF Export**: Download publication-ready PDF reports
+- 🐳 **Docker Ready**: Containerized deployment with one command
 
 ### Quick Start with MacroBuilder
 
@@ -77,7 +95,22 @@ streamlit run app.py
    - Generate AI analysis for each chart
    - Reorder sections as needed
    - Clear cache if you need fresh data
+   - Save your configuration for later
    - Export to PDF
+
+### Docker Deployment
+
+Run MacroBuilder in a container:
+
+```bash
+# Build the image
+docker build -t macrobuilder:latest .
+
+# Run the container
+docker run -p 8501:8501 -e OPENAI_API_KEY='your-key' macrobuilder:latest
+```
+
+See the complete [Docker Deployment Guide](docs/DOCKER_GUIDE.md) for advanced options.
 
 ### MacroBuilder Architecture
 

@@ -488,6 +488,75 @@ def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], period
 
 
 # --------------------------
+# Save/Load Configuration
+# --------------------------
+
+def save_current_configuration() -> str:
+    """
+    Save the current report configuration to JSON format.
+    
+    Returns:
+        JSON string representing the current report configuration
+    
+    Note:
+        Only saves chart definitions (not raw data), which can be
+        re-fetched when loading the configuration.
+    """
+    config = {
+        "report_title": st.session_state.report_title,
+        "charts": []
+    }
+    
+    # Convert each ChartConfig to JSON format matching template schema
+    for chart in st.session_state.charts:
+        chart_dict = {
+            "page_title": chart.title,
+            "series": [
+                {"id": s.series_id, "label": s.series_label}
+                for s in chart.series
+            ],
+            "frequency": chart.frequency,
+            "transform": chart.transform,
+            "units": chart.units,
+            "notes": chart.narrative  # Save narrative as notes
+        }
+        config["charts"].append(chart_dict)
+    
+    return json.dumps(config, indent=2)
+
+
+def load_configuration_from_json(json_data: dict):
+    """
+    Load a configuration from parsed JSON data.
+    
+    Args:
+        json_data: Parsed JSON configuration data
+    
+    Note:
+        This function reuses the existing load_template_charts function
+        to fetch data and create ChartConfig objects.
+    """
+    try:
+        # Update report title if specified
+        if 'report_title' in json_data:
+            st.session_state.report_title = json_data['report_title']
+        
+        # Load all charts from configuration
+        with st.spinner("Loading configuration and fetching data..."):
+            charts = load_template_charts(json_data, st.session_state.start_date)
+        
+        if charts:
+            st.session_state.charts = charts
+            st.success(f"✅ Loaded {len(charts)} chart(s) from configuration")
+            st.rerun()
+        else:
+            st.warning("No charts could be loaded from configuration")
+    
+    except Exception as e:
+        st.error(f"Error loading configuration: {str(e)}")
+
+
+# --------------------------
 # UI Components
 # --------------------------
 
@@ -553,6 +622,43 @@ def render_sidebar():
                     load_template_into_report(template_info['path'], replace_existing=False)
     else:
         st.sidebar.info("No templates found in config/templates/")
+    
+    st.sidebar.markdown("---")
+    
+    # Save & Load Configuration
+    st.sidebar.subheader("💾 Save & Load")
+    
+    # Save configuration
+    if st.session_state.charts:
+        config_json = save_current_configuration()
+        st.sidebar.download_button(
+            label="💾 Save Configuration",
+            data=config_json,
+            file_name="macro_report_config.json",
+            mime="application/json",
+            use_container_width=True,
+            help="Download current report configuration as JSON"
+        )
+    else:
+        st.sidebar.info("Add charts to enable save")
+    
+    # Load configuration
+    uploaded_file = st.sidebar.file_uploader(
+        "📂 Upload Configuration",
+        type=['json'],
+        help="Load a previously saved report configuration",
+        key="config_uploader"
+    )
+    
+    if uploaded_file is not None:
+        try:
+            # Parse JSON from uploaded file
+            json_data = json.load(uploaded_file)
+            load_configuration_from_json(json_data)
+        except json.JSONDecodeError as e:
+            st.sidebar.error(f"Invalid JSON file: {e}")
+        except Exception as e:
+            st.sidebar.error(f"Error loading file: {e}")
     
     st.sidebar.markdown("---")
     
