@@ -1,0 +1,44 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Temporary files
+_charts_tmp/
+*.png
+*.pdf
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation archives (not needed in container)
+docs/archive/
+
+# Tests (optional - include if you want to run tests in container)
+# tests/
+
+# Streamlit cache
+.streamlit/
+*.streamlit/
+
+# OS files
+.DS_Store
+Thumbs.db

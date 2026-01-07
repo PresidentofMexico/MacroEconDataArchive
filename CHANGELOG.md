@@ -1,5 +1,99 @@
 # Changelog - Bug Fixes and Improvements
 
+## [2026-01-07] - Save/Load Configuration & Docker Support ✅ COMPLETED
+
+### Summary
+Implemented persistence features (save/load report configurations) and Docker containerization for production deployment. Users can now save their work as JSON files and resume later, share configurations with colleagues, or deploy the entire application as a Docker container.
+
+### New Features
+
+#### 💾 Save & Load Configuration
+- **Added** `save_current_configuration()` function to export report state as JSON
+- **Added** "💾 Save & Load" section in Streamlit sidebar
+- **Added** Download button to save configuration as `macro_report_config.json`
+- **Added** File uploader to load previously saved configurations
+- **Added** `load_configuration_from_json()` function to restore report state
+- **Schema** Compatible with existing template format for seamless integration
+- **Data Handling** Saves only chart definitions (not raw data) - data is re-fetched on load
+
+#### 🐳 Docker Support
+- **Created** `Dockerfile` with Python 3.10-slim base image
+- **Installed** System dependencies for Kaleido/Plotly (chromium, libasound2, etc.)
+- **Configured** Streamlit environment variables for headless operation
+- **Added** Health check endpoint for container monitoring
+- **Created** `.dockerignore` for optimized builds
+- **Created** `docs/DOCKER_GUIDE.md` with comprehensive deployment instructions
+- **Port** Exposes 8501 (Streamlit default)
+- **Entrypoint** Runs `streamlit run app.py` automatically
+
+### Configuration JSON Schema
+```json
+{
+  "report_title": "Report Title",
+  "charts": [
+    {
+      "page_title": "Chart Title",
+      "series": [{"id": "SERIES_ID", "label": "Label"}],
+      "frequency": "monthly|quarterly|weekly|daily",
+      "transform": "level|yoy|qoq_saar",
+      "units": "Units",
+      "notes": "Narrative text"
+    }
+  ]
+}
+```
+
+### Files Modified
+- **src/macro_econ_data_archive/streamlit_app.py** - Added save/load functions and UI components (+74 lines)
+- **README.md** - Updated with Docker support and save/load features
+- **CHANGELOG.md** - This entry
+
+### Files Created
+- **Dockerfile** - Production-ready container definition (60 lines)
+- **.dockerignore** - Build optimization (40 lines)
+- **docs/DOCKER_GUIDE.md** - Complete deployment guide (200+ lines)
+- **tests/test_save_load_config.py** - Comprehensive test suite (380+ lines)
+
+### Testing
+- ✅ Created 6 test cases covering all save/load scenarios
+- ✅ All tests passing (6/6)
+- ✅ Python syntax validation passed
+- ✅ UI verified with Streamlit app
+- ✅ JSON schema compatibility validated
+- ✅ Multi-series and single-series support confirmed
+
+### Usage Examples
+
+#### Save Configuration
+1. Build a report with charts
+2. Click "💾 Save Configuration" in sidebar
+3. Download `macro_report_config.json`
+
+#### Load Configuration
+1. Click "📂 Upload Configuration" in sidebar
+2. Drag and drop or browse to select JSON file
+3. Configuration loads with data re-fetched from FRED
+
+#### Docker Deployment
+```bash
+# Build
+docker build -t macrobuilder:latest .
+
+# Run with API key
+docker run -p 8501:8501 -e OPENAI_API_KEY='your-key' macrobuilder:latest
+
+# Access at http://localhost:8501
+```
+
+### Notes
+- Configurations are portable across installations
+- Data is always fresh (re-fetched on load)
+- Docker image includes all necessary dependencies
+- Compatible with existing template system
+- No breaking changes to existing functionality
+
+---
+
 ## [2026-01-06] - Repository Cleanup & Reorganization ✅ COMPLETED
 
 ### Summary
