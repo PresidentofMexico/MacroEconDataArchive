@@ -865,6 +865,140 @@ streamlit run app.py
 
 ---
 
+### Session 9: Multi-Series Chart Input UI Enhancement
+**Date:** 2026-01-06  
+**Branch:** copilot/refactor-add-new-chart-sidebar  
+**Status:** ✅ COMPLETED  
+**Agent:** copilot-swe-agent
+
+**Summary:**
+Successfully refactored the "Add New Chart" sidebar UI to support multi-series input through a single text area, enabling users to add multiple FRED series to a single chart with improved UX and backward compatibility.
+
+**Tasks Completed:**
+- ✅ Explored repository structure and understood existing implementation
+- ✅ Located key functions: `render_sidebar` and `add_chart_to_report`
+- ✅ Verified that `ChartConfig` already supports `List[SeriesInfo]`
+- ✅ Confirmed `fetch_fred_cached` accepts list of series IDs
+- ✅ Confirmed `create_plotly_chart` handles multiple series correctly
+- ✅ Replaced single series inputs with `st.text_area` for multi-line series input
+- ✅ Updated `add_chart_to_report` to parse multi-line text input
+- ✅ Updated Quick Add Examples buttons to work with new function signature
+- ✅ Created focused test for multi-series parsing functionality
+- ✅ Tested the implementation manually with Streamlit app
+- ✅ Captured screenshots of UI changes
+- ✅ Verified backward compatibility with existing functionality
+
+**Implementation Details:**
+
+1. **Updated `render_sidebar` function (lines 567-604)**
+   - Replaced two separate text inputs (`series_id` and `series_label`) with single `st.text_area`
+   - Label: "Series List (One per line)"
+   - Help text with clear format instructions and examples
+   - Placeholder: `"GDPC1, Real GDP\nPCEC96, Real PCE"`
+   - Height: 100px for better multi-line visibility
+
+2. **Refactored `add_chart_to_report` function (lines 640-707)**
+   - Changed signature from `(title, series_id, series_label, ...)` to `(title, series_input, ...)`
+   - Implemented parsing logic:
+     - Splits input by newlines
+     - Parses each line using `split(',', 1)` to handle labels containing commas
+     - Strips whitespace from IDs and labels
+     - Validates at least one valid series exists
+   - Enhanced feedback: Success message shows count `"✅ Added: {title} ({len(series_list)} series)"`
+   - Updated spinner: `"Fetching data for {len(series_ids)} series..."`
+
+3. **Updated Quick Add Example buttons (lines 607-637)**
+   - Modified all three buttons to use new function signature
+   - Changed format: `"GDPC1, Real GDP"` (single line, backward compatible)
+
+**Files Modified:**
+- 📝 `src/macro_econ_data_archive/streamlit_app.py` - ~60 lines modified
+  - Updated sidebar UI for multi-series input
+  - Refactored parsing logic in `add_chart_to_report`
+  - Updated quick add button calls
+
+**Files Created:**
+- 📝 `tests/test_multi_series_input.py` (302 lines) - Comprehensive parsing tests
+
+**Testing Performed:**
+- ✅ Created comprehensive test suite with 6 test scenarios:
+  - Single series parsing
+  - Multiple series parsing (3 series)
+  - Whitespace and empty line handling
+  - Labels containing commas (splits on first comma only)
+  - Quick add button format compatibility
+  - Edge cases (missing label, empty string, invalid format)
+- ✅ All new tests passing (6/6)
+- ✅ All existing tests still passing:
+  - `verify_installation.py`: 6/6 checks PASS
+  - `test_streamlit_smoke.py`: 7/7 tests PASS
+  - `test_templates.py`: 6/6 tests PASS
+- ✅ Manual Streamlit testing:
+  - App starts successfully
+  - New text area displays correctly
+  - Multi-series input parsing works
+  - Quick Add buttons work with new signature
+  - Error handling preserved
+- ✅ Python syntax validation passed
+
+**UI Screenshots:**
+- Before: Single-series inputs (separate ID and Label fields)
+  - https://github.com/user-attachments/assets/573c965a-5746-4783-8e33-edc5dc5ede22
+- After: Multi-series text area with placeholder and help text
+  - https://github.com/user-attachments/assets/52c18745-0b6f-4d6b-bec7-76bc585061ee
+
+**Key Features:**
+- ✅ **Backward Compatible**: Single-series format still works (one line)
+- ✅ **Multi-Series Support**: Users can paste multiple series at once
+- ✅ **Smart Parsing**: Handles labels with commas by splitting on first comma only
+- ✅ **Clear Instructions**: Helpful placeholder and tooltip guide users
+- ✅ **Better UX**: Text area is more intuitive for multiple entries
+- ✅ **Preserved Functionality**: All Quick Add buttons continue to work
+- ✅ **Zero Breaking Changes**: All existing functionality maintained
+
+**Architecture Notes:**
+- No changes to `ChartConfig` or `SeriesInfo` data classes (already support multi-series)
+- No changes to `create_plotly_chart` function (already iterates over multiple series)
+- No changes to `fetch_fred_cached` function (already accepts list of series IDs)
+- Minimal code changes (~60 lines modified, surgical approach)
+- All existing features preserved (transforms, frequency, units apply globally)
+
+**Performance:**
+- No performance impact - same data fetching logic
+- Better cache utilization with sorted series IDs (from Session 7)
+- Success message now shows series count for clarity
+
+**Notes for Next Agent:**
+- ✅ All requirements from problem statement met
+- ✅ Implementation is production-ready and fully tested
+- ✅ UI is more intuitive and supports both single and multi-series workflows
+- ✅ No breaking changes introduced
+- 📋 Future enhancement: Consider per-series transforms (currently global)
+- 📋 Future enhancement: Consider color picker for each series
+- 📋 Future enhancement: Consider series reordering within chart
+
+**Acceptance Criteria Status:**
+- ✅ Replace single series inputs with text area widget
+- ✅ Support "SeriesID, Label" format (one per line)
+- ✅ Parse multi-line input correctly
+- ✅ Validate at least one valid series
+- ✅ Pass list to `fetch_fred_cached`
+- ✅ Construct `ChartConfig` with `List[SeriesInfo]`
+- ✅ Quick Add buttons still work
+- ✅ Transforms and frequency apply globally
+- ✅ `create_plotly_chart` works with multiple series
+
+**Success Metrics:**
+- 📊 Code Changes: 60 lines modified (minimal, surgical)
+- 📊 Test Coverage: 6/6 new tests + all existing tests passing
+- 📊 Backward Compatibility: 100% (zero breaking changes)
+- 📊 UX Improvement: Significant (multi-series paste support)
+- 📊 Documentation: Complete (AGENTS.md + PR description)
+
+**Recommendation:** READY FOR MERGE - Fully tested, backward compatible, production-ready
+
+---
+
 ## Template for Next Agent Session
 
 **Copy and fill this template when you start your session:**

@@ -569,12 +569,13 @@ def render_sidebar():
     
     with st.sidebar.expander("Chart Configuration", expanded=False):
         chart_title = st.text_input("Chart Title", key="new_chart_title")
-        series_id = st.text_input(
-            "FRED Series ID",
-            key="new_series_id",
-            help="e.g., GDPC1, UNRATE, CPIAUCSL"
+        series_input = st.text_area(
+            "Series List (One per line)",
+            key="new_series_input",
+            help="Format: SeriesID, Label\nExample:\nGDPC1, Real GDP\nPCEC96, Real PCE\nUNRATE, Unemployment Rate",
+            placeholder="GDPC1, Real GDP\nPCEC96, Real PCE",
+            height=100
         )
-        series_label = st.text_input("Series Label", key="new_series_label")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -594,13 +595,13 @@ def render_sidebar():
         units = st.text_input("Units", key="new_units")
         
         if st.button("➕ Add Chart to Report", use_container_width=True):
-            if chart_title and series_id and series_label:
+            if chart_title and series_input:
                 add_chart_to_report(
-                    chart_title, series_id, series_label,
+                    chart_title, series_input,
                     frequency, transform, units
                 )
             else:
-                st.error("Please fill in all required fields")
+                st.error("Please fill in Chart Title and at least one series")
     
     st.sidebar.markdown("---")
     
@@ -609,8 +610,7 @@ def render_sidebar():
     if st.sidebar.button("📈 Real GDP Growth", use_container_width=True):
         add_chart_to_report(
             "Real GDP Growth (Quarter over Quarter, Annualized)",
-            "GDPC1",
-            "Real GDP",
+            "GDPC1, Real GDP",
             "quarterly",
             "qoq_saar",
             "Percent"
@@ -619,8 +619,7 @@ def render_sidebar():
     if st.sidebar.button("📊 Real Consumer Spending", use_container_width=True):
         add_chart_to_report(
             "Real Consumer Spending (Year-over-Year)",
-            "PCEC96",
-            "Real Personal Consumption Expenditures",
+            "PCEC96, Real Personal Consumption Expenditures",
             "monthly",
             "yoy",
             "Percent"
@@ -629,33 +628,65 @@ def render_sidebar():
     if st.sidebar.button("💰 Federal Debt to GDP", use_container_width=True):
         add_chart_to_report(
             "Federal Debt as Percent of GDP",
-            "GFDEGDQ188S",
-            "Federal Debt to GDP",
+            "GFDEGDQ188S, Federal Debt to GDP",
             "quarterly",
             "level",
             "Percent of GDP"
         )
 
 
-def add_chart_to_report(title: str, series_id: str, series_label: str,
+def add_chart_to_report(title: str, series_input: str,
                        frequency: str, transform: str, units: str):
-    """Add a new chart to the report."""
+    """
+    Add a new chart to the report with one or more series.
+    
+    Args:
+        title: Chart title
+        series_input: Multi-line string with format "SeriesID, Label" per line
+        frequency: Data frequency (monthly, quarterly, etc.)
+        transform: Transform type (level, yoy, qoq_saar)
+        units: Units label for the chart
+    """
     try:
+        # Parse series input
+        series_list = []
+        series_ids = []
+        
+        for line in series_input.strip().split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Split by first comma
+            parts = line.split(',', 1)
+            if len(parts) == 2:
+                series_id = parts[0].strip()
+                series_label = parts[1].strip()
+                
+                if series_id and series_label:
+                    series_list.append(SeriesInfo(series_id=series_id, series_label=series_label))
+                    series_ids.append(series_id)
+        
+        # Validate that we have at least one series
+        if not series_list:
+            st.error("Please provide at least one valid series in the format: SeriesID, Label")
+            return
+        
         # Fetch data using cached wrapper
-        with st.spinner(f"Fetching data for {series_id}..."):
-            raw_data = fetch_fred_cached([series_id], start=st.session_state.start_date)
+        with st.spinner(f"Fetching data for {len(series_ids)} series..."):
+            raw_data = fetch_fred_cached(series_ids, start=st.session_state.start_date)
             transformed_data = build_series_for_chart(
                 raw_data, transform, frequency
             ).dropna(how="all")
         
         if transformed_data.empty:
-            st.error(f"No data available for series {series_id}")
+            st.error(f"No data available for the requested series")
             return
         
         # Create chart config with multi-series format
         chart = ChartConfig(
             title=title,
-            series=[SeriesInfo(series_id=series_id, series_label=series_label)],
+            series=series_list,
             frequency=frequency,
             transform=transform,
             units=units,
@@ -664,7 +695,7 @@ def add_chart_to_report(title: str, series_id: str, series_label: str,
         )
         
         st.session_state.charts.append(chart)
-        st.success(f"✅ Added: {title}")
+        st.success(f"✅ Added: {title} ({len(series_list)} series)")
         st.rerun()
         
     except FREDRateLimitError as e:
