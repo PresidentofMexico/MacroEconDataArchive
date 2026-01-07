@@ -93,6 +93,8 @@ def init_session_state():
         st.session_state.report_title = "Macro Economic Data Archive"
     if 'start_date' not in st.session_state:
         st.session_state.start_date = "2010-01-01"
+    if 'executive_summary' not in st.session_state:
+        st.session_state.executive_summary = ""
 
 
 # --------------------------
@@ -321,6 +323,51 @@ Keep it professional and concise."""
         return f"Error generating narrative: {str(e)}"
 
 
+def generate_executive_summary(context_data: str, api_key: str, model: str = "gpt-4o-mini") -> str:
+    """
+    Generate holistic executive briefing using ChatGPT 4o-mini.
+    
+    Args:
+        context_data: Aggregate data from all charts
+        api_key: OpenAI API key
+        model: Model to use (default: gpt-4o-mini)
+    
+    Returns:
+        Generated executive briefing text
+    """
+    try:
+        client = OpenAI(api_key=api_key)
+        
+        system_prompt = """You are the Chief Economist for a major central bank. You have been provided with a dashboard of key economic indicators. Write a 1-page 'Executive Briefing' summarizing the overall state of the economy. Structure your response as follows:
+
+**Executive Summary:** A 2-3 sentence high-level thesis (e.g., 'The economy is cooling but remains resilient...').
+
+**Key Drivers:** Synthesize the trends from the provided charts (e.g., connect Inflation falling to Interest Rate pauses).
+
+**Outlook:** A cautious forward-looking statement based on the momentum.
+
+Style: Professional, objective, dense (Federal Reserve Beige Book style). No flowery language."""
+        
+        user_prompt = f"""Here is the data for the current economic dashboard:
+
+{context_data}"""
+        
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1000
+        )
+        
+        return response.choices[0].message.content.strip()
+    
+    except Exception as e:
+        return f"Error generating executive summary: {str(e)}"
+
+
 # --------------------------
 # Chart Visualization
 # --------------------------
@@ -485,6 +532,37 @@ def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], period
             table_lines.append(f"| {date_str} | " + " | ".join(values) + " |")
 
     return "\n".join(table_lines)
+
+
+def prepare_holistic_data_summary(charts: List[ChartConfig]) -> str:
+    """
+    Prepare holistic data summary from all charts for executive briefing.
+    
+    Args:
+        charts: List of ChartConfig objects
+    
+    Returns:
+        Formatted markdown string with all chart data summaries
+    """
+    if not charts:
+        return "No charts available for analysis."
+    
+    summary_sections = []
+    
+    for idx, chart in enumerate(charts, 1):
+        # Add section header
+        summary_sections.append(f"### Chart {idx}: {chart.title}")
+        
+        # Add chart metadata
+        summary_sections.append(f"**Transform:** {chart.transform} | **Frequency:** {chart.frequency} | **Units:** {chart.units}")
+        summary_sections.append("")
+        
+        # Add data table (limited to 12 periods to save tokens)
+        data_table = prepare_data_summary(chart.data, chart.series, periods=12)
+        summary_sections.append(data_table)
+        summary_sections.append("")
+    
+    return "\n".join(summary_sections)
 
 
 # --------------------------
@@ -972,6 +1050,28 @@ def render_chart_card(idx: int, chart: ChartConfig):
 def render_preview_view():
     """Render the report preview."""
     st.subheader("Report Preview")
+    
+    # Executive Briefing Controls at the top
+    if st.session_state.charts:
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            if st.button("📝 Generate Executive Briefing", use_container_width=True, type="primary"):
+                generate_executive_briefing()
+        
+        with col2:
+            if st.session_state.executive_summary:
+                if st.button("🗑️ Clear Briefing", use_container_width=True):
+                    st.session_state.executive_summary = ""
+                    st.rerun()
+        
+        # Display Executive Summary if available
+        if st.session_state.executive_summary:
+            st.markdown("### 🎯 Executive Briefing: State of the Economy")
+            # Use a styled container for the summary
+            st.info(st.session_state.executive_summary)
+            st.markdown("---")
+    
     st.markdown(f"## {st.session_state.report_title}")
     st.markdown(f"*As of {datetime.today().strftime('%B %d, %Y')}*")
     st.markdown("---")
@@ -1038,6 +1138,31 @@ def generate_analysis_for_chart(idx: int):
         # Force the text area widget to update its display value
         if f"narrative_{idx}" in st.session_state:
             st.session_state[f"narrative_{idx}"] = narrative
+        st.rerun()
+
+
+def generate_executive_briefing():
+    """Generate holistic executive briefing from all charts."""
+    if not st.session_state.openai_api_key:
+        st.error("Please provide an OpenAI API key in the sidebar")
+        return
+    
+    if not st.session_state.charts:
+        st.error("No charts available for analysis")
+        return
+    
+    with st.spinner("Generating Executive Briefing... This may take a moment."):
+        # Prepare holistic data summary from all charts
+        context_data = prepare_holistic_data_summary(st.session_state.charts)
+        
+        # Generate executive summary
+        executive_summary = generate_executive_summary(
+            context_data,
+            st.session_state.openai_api_key
+        )
+        
+        # Update session state
+        st.session_state.executive_summary = executive_summary
         st.rerun()
 
 

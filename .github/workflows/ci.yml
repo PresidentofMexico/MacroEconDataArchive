@@ -27,6 +27,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
       
+      # FIX 1: Updated package name to libasound2t64 for Ubuntu 24.04 runners
       - name: Install system dependencies for Kaleido
         run: |
           sudo apt-get update
