@@ -80,8 +80,8 @@ jobs:
           PYTHONPATH: .
         continue-on-error: true
       
-      - name: Upload coverage reports Codecov
-        uses: codecov/codecov-action@v5
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
