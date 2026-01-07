@@ -7,6 +7,16 @@ A powerful toolkit for creating chart-driven macroeconomic reports from public t
 
 ## ✨ Latest Features (2026-01-07) ✅ NEW
 
+**📅 Release Calendar** - Phase 5:
+- View upcoming release dates for all economic indicators in your report ✅
+- See when FRED data will be updated next ✅
+- Highlights releases within 7 days for timely planning ✅
+- Shows Days Remaining, Release Name, and scheduled dates ✅
+- Requires free FRED API key (get at https://fred.stlouisfed.org/docs/api/api_key.html) ✅
+- 24-hour cache for optimal performance ✅
+
+## ✨ Recent Features (2026-01-07) ✅ COMPLETED
+
 **💾 Save & Load Configurations**:
 - Save current report configuration as JSON ✅
 - Download configurations for backup/sharing ✅
@@ -62,6 +72,7 @@ Build custom economic reports interactively with AI-powered analysis.
 - 📈 **Multi-Series Charts**: Compare multiple indicators on one chart
 - 💾 **Save & Load**: Export and import report configurations as JSON
 - 🤖 **AI-Powered Analysis**: Generate professional economic narratives using ChatGPT 4o-mini
+- 📅 **Release Calendar**: View upcoming FRED data release dates for all series in your report
 - 🎨 **Interactive Visualizations**: Plotly charts with hover details and zoom
 - 📝 **Report Assembly**: Reorder charts, edit narratives, preview final report
 - 📥 **PDF Export**: Download publication-ready PDF reports
@@ -79,10 +90,13 @@ pip install -r requirements.txt
 python verify_installation.py
 ```
 
-3. **Set your OpenAI API key** (for AI features):
+3. **Set your API keys** (optional but recommended):
 ```bash
-export OPENAI_API_KEY='your-api-key-here'
+export OPENAI_API_KEY='your-openai-key'  # For AI-powered narratives
+export FRED_API_KEY='your-fred-key'      # For Release Calendar feature
 ```
+
+Get a free FRED API key: https://fred.stlouisfed.org/docs/api/api_key.html
 
 4. **Launch the app:**
 ```bash
