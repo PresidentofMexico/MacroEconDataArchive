@@ -27,13 +27,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
       
+      # FIX 1: Updated package name to libasound2t64 for Ubuntu 24.04 runners
       - name: Install system dependencies for Kaleido
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             chromium-browser \
             chromium-chromedriver \
-            libasound2 \
+            libasound2t64 \
             libatk-bridge2.0-0 \
             libatk1.0-0 \
             libatspi2.0-0 \
@@ -80,15 +81,17 @@ jobs:
           PYTHONPATH: .
         continue-on-error: true
       
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-        continue-on-error: true
-        if: always()
+      # FIX 2: Commented out Codecov upload to prevent token errors
+      # - name: Upload coverage reports
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     file: ./coverage.xml
+      #     flags: unittests
+      #     name: codecov-umbrella
+      #     fail_ci_if_error: false
+      #   continue-on-error: true
+      #   if: always()
       
       - name: CLI smoke test
         run: |
