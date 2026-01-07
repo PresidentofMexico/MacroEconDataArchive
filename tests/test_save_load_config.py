@@ -18,13 +18,13 @@ class MockStreamlit:
         report_title = "Test Report"
         start_date = "2020-01-01"
         charts = []
-    
+
     @staticmethod
     def cache_data(**kwargs):
         def decorator(func):
             return func
         return decorator
-    
+
     @staticmethod
     def set_page_config(**kwargs):
         pass
@@ -38,20 +38,20 @@ from src.macro_econ_data_archive.streamlit_app import (
 def test_save_empty_configuration():
     """Test saving an empty configuration."""
     print("Test 1: Save Empty Configuration")
-    
+
     # Setup
     MockStreamlit.session_state.charts = []
     MockStreamlit.session_state.report_title = "Empty Report"
-    
+
     # Execute
     config_json = save_current_configuration()
     config = json.loads(config_json)
-    
+
     # Verify
     assert config['report_title'] == "Empty Report"
     assert config['charts'] == []
     assert isinstance(config_json, str)
-    
+
     print("  ✓ Empty configuration saved correctly")
     print(f"  ✓ JSON structure valid")
     print()
@@ -60,7 +60,7 @@ def test_save_empty_configuration():
 def test_save_single_chart_configuration():
     """Test saving a configuration with a single chart."""
     print("Test 2: Save Single Chart Configuration")
-    
+
     # Setup
     series = [SeriesInfo(series_id="GDPC1", series_label="Real GDP")]
     chart = ChartConfig(
@@ -72,18 +72,18 @@ def test_save_single_chart_configuration():
         data=None,
         narrative="Test narrative about GDP growth."
     )
-    
+
     MockStreamlit.session_state.charts = [chart]
     MockStreamlit.session_state.report_title = "GDP Report"
-    
+
     # Execute
     config_json = save_current_configuration()
     config = json.loads(config_json)
-    
+
     # Verify
     assert config['report_title'] == "GDP Report"
     assert len(config['charts']) == 1
-    
+
     chart_data = config['charts'][0]
     assert chart_data['page_title'] == "Real GDP Growth"
     assert len(chart_data['series']) == 1
@@ -93,7 +93,7 @@ def test_save_single_chart_configuration():
     assert chart_data['transform'] == "qoq_saar"
     assert chart_data['units'] == "Percent"
     assert chart_data['notes'] == "Test narrative about GDP growth."
-    
+
     print("  ✓ Single chart saved correctly")
     print(f"  ✓ Chart title: {chart_data['page_title']}")
     print(f"  ✓ Series: {chart_data['series']}")
@@ -104,7 +104,7 @@ def test_save_single_chart_configuration():
 def test_save_multi_series_chart():
     """Test saving a chart with multiple series."""
     print("Test 3: Save Multi-Series Chart Configuration")
-    
+
     # Setup
     series = [
         SeriesInfo(series_id="GDPC1", series_label="Real GDP"),
@@ -120,21 +120,21 @@ def test_save_multi_series_chart():
         data=None,
         narrative="Multi-series analysis."
     )
-    
+
     MockStreamlit.session_state.charts = [chart]
     MockStreamlit.session_state.report_title = "Multi-Series Report"
-    
+
     # Execute
     config_json = save_current_configuration()
     config = json.loads(config_json)
-    
+
     # Verify
     chart_data = config['charts'][0]
     assert len(chart_data['series']) == 3
     assert chart_data['series'][0]['id'] == "GDPC1"
     assert chart_data['series'][1]['id'] == "PCEC96"
     assert chart_data['series'][2]['id'] == "UNRATE"
-    
+
     print("  ✓ Multi-series chart saved correctly")
     print(f"  ✓ Number of series: {len(chart_data['series'])}")
     for s in chart_data['series']:
@@ -145,7 +145,7 @@ def test_save_multi_series_chart():
 def test_save_multiple_charts():
     """Test saving a configuration with multiple charts."""
     print("Test 4: Save Multiple Charts Configuration")
-    
+
     # Setup
     charts = [
         ChartConfig(
@@ -176,14 +176,14 @@ def test_save_multiple_charts():
             narrative=""
         )
     ]
-    
+
     MockStreamlit.session_state.charts = charts
     MockStreamlit.session_state.report_title = "Comprehensive Report"
-    
+
     # Execute
     config_json = save_current_configuration()
     config = json.loads(config_json)
-    
+
     # Verify
     assert len(config['charts']) == 3
     assert config['charts'][0]['page_title'] == "Chart 1"
@@ -192,7 +192,7 @@ def test_save_multiple_charts():
     assert config['charts'][0]['notes'] == "First chart narrative."
     assert config['charts'][1]['notes'] == "Second chart narrative."
     assert config['charts'][2]['notes'] == ""
-    
+
     print("  ✓ Multiple charts saved correctly")
     print(f"  ✓ Total charts: {len(config['charts'])}")
     print()
@@ -201,7 +201,7 @@ def test_save_multiple_charts():
 def test_json_schema_compatibility():
     """Test that saved JSON matches template schema."""
     print("Test 5: JSON Schema Compatibility with Templates")
-    
+
     # Setup - create a chart similar to template structure
     series = [SeriesInfo(series_id="GDPC1", series_label="Real GDP")]
     chart = ChartConfig(
@@ -213,31 +213,31 @@ def test_json_schema_compatibility():
         data=None,
         narrative="Real Gross Domestic Product, seasonally adjusted annual rate"
     )
-    
+
     MockStreamlit.session_state.charts = [chart]
     MockStreamlit.session_state.report_title = "Core Macroeconomic Indicators Report"
-    
+
     # Execute
     config_json = save_current_configuration()
     config = json.loads(config_json)
-    
+
     # Verify schema matches template format
     assert 'report_title' in config
     assert 'charts' in config
     assert isinstance(config['charts'], list)
-    
+
     chart_data = config['charts'][0]
     required_fields = ['page_title', 'series', 'frequency', 'transform', 'units', 'notes']
     for field in required_fields:
         assert field in chart_data, f"Missing required field: {field}"
-    
+
     # Verify series structure
     assert isinstance(chart_data['series'], list)
     assert len(chart_data['series']) > 0
     series_data = chart_data['series'][0]
     assert 'id' in series_data
     assert 'label' in series_data
-    
+
     print("  ✓ JSON schema matches template format")
     print(f"  ✓ All required fields present: {', '.join(required_fields)}")
     print(f"  ✓ Series structure correct: id, label")
@@ -247,7 +247,7 @@ def test_json_schema_compatibility():
 def test_json_pretty_formatting():
     """Test that JSON is properly formatted for readability."""
     print("Test 6: JSON Pretty Formatting")
-    
+
     # Setup
     series = [SeriesInfo(series_id="GDPC1", series_label="Real GDP")]
     chart = ChartConfig(
@@ -259,20 +259,20 @@ def test_json_pretty_formatting():
         data=None,
         narrative="Test"
     )
-    
+
     MockStreamlit.session_state.charts = [chart]
     MockStreamlit.session_state.report_title = "Test Report"
-    
+
     # Execute
     config_json = save_current_configuration()
-    
+
     # Verify formatting
     assert config_json.count('\n') > 10  # Should have line breaks
     assert '  ' in config_json  # Should have indentation
-    
+
     # Verify it's valid JSON
     json.loads(config_json)
-    
+
     print("  ✓ JSON is pretty-formatted with indentation")
     print(f"  ✓ Total lines: {config_json.count(chr(10)) + 1}")
     print()
@@ -284,7 +284,7 @@ def run_all_tests():
     print("TESTING: Save/Load Configuration Functionality")
     print("=" * 70)
     print()
-    
+
     tests = [
         test_save_empty_configuration,
         test_save_single_chart_configuration,
@@ -293,10 +293,10 @@ def run_all_tests():
         test_json_schema_compatibility,
         test_json_pretty_formatting
     ]
-    
+
     passed = 0
     failed = 0
-    
+
     for test in tests:
         try:
             test()
@@ -309,11 +309,11 @@ def run_all_tests():
             failed += 1
             print(f"  ✗ ERROR: {e}")
             print()
-    
+
     print("=" * 70)
     print(f"RESULTS: {passed} passed, {failed} failed")
     print("=" * 70)
-    
+
     return failed == 0
 
 

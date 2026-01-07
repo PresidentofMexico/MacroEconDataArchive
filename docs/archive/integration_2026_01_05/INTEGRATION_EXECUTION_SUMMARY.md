@@ -24,7 +24,7 @@
 **1. streamlit_app.py Integration (MOST COMPLEX)**
 This single file requires changes from ALL 4 PRs:
 - PR #10: +37 lines (kaleido error handling)
-- PR #12: +51 lines (caching decorator, error handling) 
+- PR #12: +51 lines (caching decorator, error handling)
 - PR #13: +137 lines (SeriesInfo dataclass, multi-series support)
 - PR #11: +180 lines (template UI and loading)
 - **Total**: ~400 lines of changes with conflicts
@@ -68,7 +68,7 @@ From PR #13:
 
 ### Why This Takes Time
 
-1. **Sequential Dependencies**: 
+1. **Sequential Dependencies**:
    - Templates (PR #11) need multi-series support (PR #13)
    - Caching (PR #12) needs updated data model
    - All features must work together

@@ -91,7 +91,7 @@ Core file integration needed:
 ### Step 1: Apply PR #10 Changes (Foundation)
 ```bash
 # Already done:
-✓ requirements.txt 
+✓ requirements.txt
 ✓ test_cli_smoke.py
 
 # TODO:

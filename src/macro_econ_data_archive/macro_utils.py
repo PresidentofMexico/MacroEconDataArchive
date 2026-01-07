@@ -38,11 +38,11 @@ class FREDServerError(Exception):
 def yoy(series: pd.Series, periods: int) -> pd.Series:
     """
     Year-over-year percent change for the given periodicity.
-    
+
     Args:
         series: Time series data
         periods: Number of periods for comparison (e.g., 12 for monthly, 4 for quarterly)
-    
+
     Returns:
         Series with YoY percent change
     """
@@ -52,10 +52,10 @@ def yoy(series: pd.Series, periods: int) -> pd.Series:
 def qoq_saar(series: pd.Series) -> pd.Series:
     """
     Quarter-over-quarter change at a seasonally adjusted annual rate.
-    
+
     Args:
         series: Time series data
-    
+
     Returns:
         Series with QoQ SAAR percent change
     """
@@ -65,10 +65,10 @@ def qoq_saar(series: pd.Series) -> pd.Series:
 def safe_to_numeric(s: pd.Series) -> pd.Series:
     """
     Safely convert series to numeric, coercing errors to NaN.
-    
+
     Args:
         s: Series to convert
-    
+
     Returns:
         Numeric series
     """
@@ -78,10 +78,10 @@ def safe_to_numeric(s: pd.Series) -> pd.Series:
 def infer_yoy_periods(freq: str) -> int:
     """
     Infer the number of periods for year-over-year calculation based on frequency.
-    
+
     Args:
         freq: Frequency string (e.g., "monthly", "quarterly", "weekly", "daily")
-    
+
     Returns:
         Number of periods in a year
     """
@@ -103,7 +103,7 @@ def infer_yoy_periods(freq: str) -> int:
 # --------------------------
 
 def fetch_fred(
-    series_ids: List[str], 
+    series_ids: List[str],
     start: str = "1990-01-01",
     max_retries: int = 3,
     backoff_factor: float = 2.0
@@ -111,16 +111,16 @@ def fetch_fred(
     """
     Fetch series from FRED via the public `fredgraph.csv` endpoint (no API key).
     Includes retry logic with exponential backoff for transient errors.
-    
+
     Args:
         series_ids: List of FRED series IDs to fetch
         start: Start date for data (YYYY-MM-DD format)
         max_retries: Maximum number of retry attempts for transient errors
         backoff_factor: Exponential backoff multiplier (delay = backoff_factor ** attempt)
-    
+
     Returns:
         DataFrame with fetched series as columns
-    
+
     Raises:
         FREDRateLimitError: If rate limit is exceeded (403 error)
         FREDServerError: If server error persists after retries (5xx)
@@ -128,28 +128,28 @@ def fetch_fred(
     """
     start_ts = pd.to_datetime(start)
     df = pd.DataFrame()
-    
+
     # Use requests with a proper User-Agent to avoid 403 Forbidden
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
     }
-    
+
     for sid in series_ids:
         url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={quote_plus(sid)}"
-        
+
         # Retry loop with exponential backoff
         last_error = None
         for attempt in range(max_retries):
             try:
                 response = requests.get(url, headers=headers, timeout=30)
-                
+
                 # Handle rate limiting (403) - don't retry, raise immediately
                 if response.status_code == 403:
                     raise FREDRateLimitError(
                         f"FRED rate limit exceeded for series '{sid}'. "
                         f"Please wait a few minutes before trying again."
                     )
-                
+
                 # Handle server errors (5xx) - retry with backoff
                 if 500 <= response.status_code < 600:
                     if attempt < max_retries - 1:
@@ -161,13 +161,13 @@ def fetch_fred(
                             f"FRED server error ({response.status_code}) for series '{sid}' "
                             f"after {max_retries} attempts."
                         )
-                
+
                 # Raise for other HTTP errors
                 response.raise_for_status()
-                
+
                 # Read CSV from response content
                 raw = pd.read_csv(io.StringIO(response.text))
-                
+
                 if "DATE" in raw.columns:
                     date_col = "DATE"
                 elif "observation_date" in raw.columns:
@@ -181,7 +181,7 @@ def fetch_fred(
                 # Try to find the series column - prefer exact match, fallback to first numeric column
                 if sid not in raw.columns:
                     # Fallback: use first non-date numeric column if available
-                    numeric_cols = [col for col in raw.columns if col != date_col and 
+                    numeric_cols = [col for col in raw.columns if col != date_col and
                                    pd.api.types.is_numeric_dtype(raw[col])]
                     if numeric_cols:
                         actual_col = numeric_cols[0]
@@ -203,14 +203,14 @@ def fetch_fred(
                 s = safe_to_numeric(raw[sid])
                 s = s[s.index >= start_ts]
                 df[sid] = s
-                
+
                 # Success - break retry loop
                 break
-                
+
             except (FREDRateLimitError, FREDServerError):
                 # Don't retry these, just re-raise
                 raise
-                
+
             except requests.exceptions.RequestException as e:
                 # Network/connection errors - retry with backoff
                 last_error = e
@@ -222,26 +222,26 @@ def fetch_fred(
                     raise Exception(
                         f"Failed to fetch data for {sid} after {max_retries} attempts: {str(e)}"
                     )
-                    
+
             except Exception as e:
                 # Other errors (parsing, etc.) - don't retry
                 raise Exception(f"Failed to fetch data for {sid}: {str(e)}")
-            
+
     return df
 
 
 def build_series_for_chart(df: pd.DataFrame, transform: str, frequency: str = "monthly") -> pd.DataFrame:
     """
     Apply transformation to dataframe based on specified transform type.
-    
+
     Args:
         df: Raw data DataFrame
         transform: Type of transformation ("level", "yoy", or "qoq_saar")
         frequency: Data frequency for YoY calculation
-    
+
     Returns:
         Transformed DataFrame
-    
+
     Raises:
         ValueError: If unknown transform type is specified
     """

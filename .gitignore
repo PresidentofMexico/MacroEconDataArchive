@@ -41,3 +41,9 @@ test_app_functionality.py
 *.swp
 *.swo
 *~
+
+# Testing
+.coverage
+coverage.xml
+.pytest_cache/
+htmlcov/

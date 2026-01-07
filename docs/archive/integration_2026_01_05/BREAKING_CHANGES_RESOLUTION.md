@@ -90,7 +90,7 @@ def fetch_fred_cached(series_ids: List[str], start: str) -> pd.DataFrame:
     return fetch_fred(canonical_series_ids, start=start)
 ```
 
-**Impact:** 
+**Impact:**
 - Reduces cache fragmentation
 - Improves cache hit rate for multi-series charts
 - Order-independent caching behavior
@@ -185,7 +185,7 @@ if sid not in raw.columns:
 ```python
 if sid not in raw.columns:
     # Fallback: use first non-date numeric column if available
-    numeric_cols = [col for col in raw.columns if col != date_col and 
+    numeric_cols = [col for col in raw.columns if col != date_col and
                    pd.api.types.is_numeric_dtype(raw[col])]
     if numeric_cols:
         actual_col = numeric_cols[0]

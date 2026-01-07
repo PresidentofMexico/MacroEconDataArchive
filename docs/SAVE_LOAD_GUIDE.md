@@ -232,7 +232,7 @@ The format is compatible with:
 
 **Problem**: File upload shows JSON error.
 
-**Solution**: 
+**Solution**:
 - Ensure the file is valid JSON (use [JSONLint](https://jsonlint.com/) to validate)
 - Check for missing commas, quotes, or brackets
 - Don't edit the file manually unless you're confident with JSON syntax

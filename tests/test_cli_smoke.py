@@ -47,12 +47,12 @@ def test_cli_help():
         src_dir = repo_root / "src"
         if str(src_dir) not in sys.path:
             sys.path.insert(0, str(src_dir))
-        
+
         from macro_econ_data_archive.report_generator import main
-        
+
         # Save original argv
         original_argv = sys.argv[:]
-        
+
         # Test help
         sys.argv = ["test", "--help"]
         try:
@@ -79,9 +79,9 @@ def test_fred_fetch():
         src_dir = repo_root / "src"
         if str(src_dir) not in sys.path:
             sys.path.insert(0, str(src_dir))
-        
+
         from macro_econ_data_archive.macro_utils import fetch_fred
-        
+
         # Try to fetch a simple series
         df = fetch_fred(["CPIAUCSL"], start="2023-01-01")
         if df is not None and not df.empty:
@@ -103,10 +103,10 @@ def test_minimal_report_generation():
         src_dir = repo_root / "src"
         if str(src_dir) not in sys.path:
             sys.path.insert(0, str(src_dir))
-        
+
         from macro_econ_data_archive.report_generator import main
         import json
-        
+
         # Create a minimal chart spec
         minimal_spec = {
             "charts": [
@@ -120,20 +120,20 @@ def test_minimal_report_generation():
                 }
             ]
         }
-        
+
         # Create temp files
         with tempfile.TemporaryDirectory() as tmpdir:
             spec_file = Path(tmpdir) / "test_spec.json"
             out_file = Path(tmpdir) / "test_report.pdf"
             chart_dir = Path(tmpdir) / "charts"
-            
+
             # Write spec
             with open(spec_file, 'w') as f:
                 json.dump(minimal_spec, f)
-            
+
             # Save original argv
             original_argv = sys.argv[:]
-            
+
             # Run CLI
             sys.argv = [
                 "test",
@@ -142,7 +142,7 @@ def test_minimal_report_generation():
                 "--tmpdir", str(chart_dir),
                 "--start", "2023-01-01"
             ]
-            
+
             try:
                 exit_code = main()
                 if exit_code == 0 and out_file.exists():
@@ -153,7 +153,7 @@ def test_minimal_report_generation():
                     return False
             finally:
                 sys.argv = original_argv
-                
+
     except Exception as e:
         print(f"  ✗ Error: {e}")
         import traceback
@@ -166,14 +166,14 @@ def main():
     print("=" * 60)
     print("CLI Smoke Test Suite")
     print("=" * 60)
-    
+
     tests = [
         ("Import Test", test_imports),
         ("CLI Help", test_cli_help),
         ("FRED Fetch", test_fred_fetch),
         ("Report Generation", test_minimal_report_generation),
     ]
-    
+
     results = []
     for name, test_func in tests:
         try:
@@ -182,21 +182,21 @@ def main():
         except Exception as e:
             print(f"\n{name} crashed: {e}")
             results.append((name, False))
-    
+
     print("\n" + "=" * 60)
     print("Test Results:")
     print("=" * 60)
-    
+
     passed = sum(1 for _, result in results if result)
     total = len(results)
-    
+
     for name, result in results:
         status = "✓ PASS" if result else "✗ FAIL"
         print(f"{status}: {name}")
-    
+
     print(f"\nTotal: {passed}/{total} tests passed")
     print("=" * 60)
-    
+
     return 0 if passed == total else 1
 
 
