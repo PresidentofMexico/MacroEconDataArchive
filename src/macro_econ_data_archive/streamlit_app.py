@@ -25,6 +25,7 @@ from .macro_utils import (
     yoy,
     qoq_saar,
     infer_yoy_periods,
+    get_series_release_info,
     FREDRateLimitError,
     FREDServerError
 )
@@ -89,6 +90,8 @@ def init_session_state():
         st.session_state.charts = []
     if 'openai_api_key' not in st.session_state:
         st.session_state.openai_api_key = os.getenv('OPENAI_API_KEY', '')
+    if 'fred_api_key' not in st.session_state:
+        st.session_state.fred_api_key = os.getenv('FRED_API_KEY', '')
     if 'report_title' not in st.session_state:
         st.session_state.report_title = "Macro Economic Data Archive"
     if 'start_date' not in st.session_state:
@@ -127,6 +130,23 @@ def fetch_fred_cached(series_ids: List[str], start: str) -> pd.DataFrame:
     # ["PCEC96", "GDPC1"] and ["GDPC1", "PCEC96"] will use the same cache entry
     canonical_series_ids = sorted(series_ids)
     return fetch_fred(canonical_series_ids, start=start)
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_series_release_info_cached(series_id: str, api_key: str) -> dict:
+    """
+    Cached wrapper for get_series_release_info with 24-hour TTL.
+    
+    Release schedules don't change frequently, so we cache for longer.
+    
+    Args:
+        series_id: FRED series ID
+        api_key: FRED API key
+    
+    Returns:
+        Dictionary with release information
+    """
+    return get_series_release_info(series_id, api_key)
 
 
 # --------------------------
@@ -657,15 +677,26 @@ def render_sidebar():
 
     st.sidebar.markdown("---")
 
+    # API Keys
+    st.sidebar.subheader("🔑 API Keys")
+    
     # OpenAI API Key
-    st.sidebar.subheader("AI Settings")
-    api_key = st.sidebar.text_input(
+    openai_key = st.sidebar.text_input(
         "OpenAI API Key",
         value=st.session_state.openai_api_key,
         type="password",
         help="Required for AI-powered narrative generation"
     )
-    st.session_state.openai_api_key = api_key
+    st.session_state.openai_api_key = openai_key
+    
+    # FRED API Key
+    fred_key = st.sidebar.text_input(
+        "FRED API Key",
+        value=st.session_state.fred_api_key,
+        type="password",
+        help="Required for Release Calendar feature. Get free key at https://fred.stlouisfed.org/docs/api/api_key.html"
+    )
+    st.session_state.fred_api_key = fred_key
 
     st.sidebar.markdown("---")
 
@@ -744,6 +775,7 @@ def render_sidebar():
     st.sidebar.subheader("⚙️ Settings")
     if st.sidebar.button("🔄 Clear Data Cache", use_container_width=True):
         fetch_fred_cached.clear()
+        get_series_release_info_cached.clear()
         st.sidebar.success("Cache cleared!")
 
     st.sidebar.markdown("---")
@@ -952,13 +984,16 @@ def render_main_area():
         return
 
     # Tabs for different views
-    tab1, tab2 = st.tabs(["📊 Report Builder", "📄 Report Preview"])
+    tab1, tab2, tab3 = st.tabs(["📊 Report Builder", "📄 Report Preview", "📅 Release Calendar"])
 
     with tab1:
         render_builder_view()
 
     with tab2:
         render_preview_view()
+    
+    with tab3:
+        render_calendar_view()
 
 
 def render_builder_view():
@@ -1088,6 +1123,145 @@ def render_preview_view():
             st.info("No analysis generated yet")
 
         st.markdown("---")
+
+
+def render_calendar_view():
+    """Render the release calendar showing next update dates for all series."""
+    st.subheader("📅 Release Calendar")
+    
+    # Check if FRED API key is available
+    if not st.session_state.fred_api_key:
+        st.warning("⚠️ Please provide a FRED API key in the sidebar to view release schedules")
+        st.info("""
+        **How to get a FRED API key:**
+        1. Visit https://fred.stlouisfed.org/docs/api/api_key.html
+        2. Register for a free account
+        3. Generate your API key
+        4. Enter it in the sidebar under "API Keys"
+        
+        The Release Calendar feature shows you when the economic data in your report will be updated next.
+        """)
+        return
+    
+    # Check if there are any charts
+    if not st.session_state.charts:
+        st.info("👈 Add charts to your report to see their release schedules")
+        return
+    
+    st.markdown("""
+    This calendar shows the next scheduled release dates for all economic indicators in your report.
+    Data is fetched from the FRED API and shows when each series will be updated.
+    """)
+    
+    # Extract unique series IDs from all charts
+    unique_series = set()
+    series_info_map = {}  # Map series_id to its label
+    
+    for chart in st.session_state.charts:
+        for series in chart.series:
+            unique_series.add(series.series_id)
+            series_info_map[series.series_id] = series.series_label
+    
+    series_list = sorted(unique_series)
+    
+    # Fetch release info for each series
+    st.markdown(f"**Fetching release schedules for {len(series_list)} unique series...**")
+    
+    # Use progress bar for better UX
+    progress_bar = st.progress(0)
+    release_data = []
+    
+    for idx, series_id in enumerate(series_list):
+        # Update progress
+        progress = (idx + 1) / len(series_list)
+        progress_bar.progress(progress)
+        
+        # Fetch release info (cached)
+        try:
+            info = get_series_release_info_cached(series_id, st.session_state.fred_api_key)
+            
+            # Calculate days remaining if we have a valid date
+            next_date = info.get('next_release_date', 'TBD')
+            if next_date != 'TBD':
+                try:
+                    release_date = pd.to_datetime(next_date)
+                    today = pd.Timestamp.now().normalize()
+                    days_remaining = (release_date - today).days
+                except:
+                    days_remaining = None
+            else:
+                days_remaining = None
+            
+            release_data.append({
+                'Series ID': series_id,
+                'Series': series_info_map.get(series_id, series_id),
+                'Release Name': info.get('release_name', 'Unknown'),
+                'Next Release': next_date,
+                'Days Remaining': days_remaining if days_remaining is not None else 'N/A'
+            })
+        except Exception as e:
+            # Handle errors gracefully
+            release_data.append({
+                'Series ID': series_id,
+                'Series': series_info_map.get(series_id, series_id),
+                'Release Name': 'Error',
+                'Next Release': 'TBD',
+                'Days Remaining': 'N/A'
+            })
+    
+    # Clear progress bar
+    progress_bar.empty()
+    
+    # Create DataFrame
+    if release_data:
+        df = pd.DataFrame(release_data)
+        
+        # Sort by next release date (put TBD at the end)
+        def sort_key(row):
+            if row['Next Release'] == 'TBD':
+                return (1, '')  # TBD comes last
+            else:
+                return (0, row['Next Release'])
+        
+        df['_sort_key'] = df.apply(sort_key, axis=1)
+        df = df.sort_values('_sort_key').drop('_sort_key', axis=1)
+        
+        st.markdown("---")
+        
+        # Display summary stats
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            scheduled_count = len([r for r in release_data if r['Next Release'] != 'TBD'])
+            st.metric("Scheduled Releases", scheduled_count)
+        with col2:
+            upcoming_7d = len([r for r in release_data 
+                             if isinstance(r['Days Remaining'], int) and r['Days Remaining'] <= 7])
+            st.metric("Within 7 Days", upcoming_7d)
+        with col3:
+            tbd_count = len([r for r in release_data if r['Next Release'] == 'TBD'])
+            st.metric("TBD/Irregular", tbd_count)
+        
+        st.markdown("---")
+        
+        # Highlight rows with releases in next 7 days
+        def highlight_upcoming(row):
+            if isinstance(row['Days Remaining'], int) and row['Days Remaining'] <= 7 and row['Days Remaining'] >= 0:
+                return ['background-color: #ffcccc'] * len(row)
+            return [''] * len(row)
+        
+        # Display the table with styling
+        styled_df = df.style.apply(highlight_upcoming, axis=1)
+        st.dataframe(styled_df, use_container_width=True, hide_index=True)
+        
+        # Add legend
+        st.markdown("""
+        **Legend:**
+        - 🔴 **Highlighted rows**: Releases scheduled within the next 7 days
+        - **TBD**: No regular release schedule or future date not available
+        - **Days Remaining**: Number of days until next release (from today)
+        """)
+    else:
+        st.warning("Could not fetch release information")
 
 
 # --------------------------

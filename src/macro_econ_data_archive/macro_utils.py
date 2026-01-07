@@ -258,3 +258,116 @@ def build_series_for_chart(df: pd.DataFrame, transform: str, frequency: str = "m
     else:
         raise ValueError(f"Unknown transform: {transform}")
     return out
+
+
+# --------------------------
+# FRED Release Calendar
+# --------------------------
+
+def get_series_release_info(series_id: str, api_key: str) -> dict:
+    """
+    Get release schedule information for a FRED series.
+    
+    This function queries the FRED API to find which release a series belongs to,
+    then determines the next scheduled release date for that release.
+    
+    Args:
+        series_id: FRED series ID (e.g., "GDPC1", "UNRATE")
+        api_key: FRED API key (obtain from https://fred.stlouisfed.org/docs/api/api_key.html)
+    
+    Returns:
+        Dictionary with keys:
+            - series_id: The series ID
+            - release_name: Name of the release (e.g., "Employment Situation")
+            - next_release_date: Next scheduled release date as string (YYYY-MM-DD) or "TBD"
+            - release_id: FRED release ID (for reference)
+    
+    Raises:
+        Exception: If API request fails or data cannot be retrieved
+    
+    Example:
+        >>> info = get_series_release_info("UNRATE", "your_api_key")
+        >>> print(info)
+        {'series_id': 'UNRATE', 'release_name': 'Employment Situation', 
+         'next_release_date': '2026-02-07', 'release_id': 50}
+    """
+    if not api_key:
+        raise ValueError("FRED API key is required")
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+    }
+    
+    try:
+        # Step 1: Find which release this series belongs to
+        series_release_url = (
+            f"https://api.stlouisfed.org/fred/series/release"
+            f"?series_id={series_id}&api_key={api_key}&file_type=json"
+        )
+        
+        response = requests.get(series_release_url, headers=headers, timeout=30)
+        response.raise_for_status()
+        release_data = response.json()
+        
+        # Extract release information
+        releases = release_data.get('releases', [])
+        if not releases:
+            # Series might not be part of a regular release schedule
+            return {
+                'series_id': series_id,
+                'release_name': 'N/A',
+                'next_release_date': 'TBD',
+                'release_id': None
+            }
+        
+        # Use the first (primary) release
+        release = releases[0]
+        release_id = release.get('id')
+        release_name = release.get('name', 'Unknown Release')
+        
+        # Step 2: Get next release date for this release
+        today = pd.Timestamp.now().strftime('%Y-%m-%d')
+        release_dates_url = (
+            f"https://api.stlouisfed.org/fred/release/dates"
+            f"?release_id={release_id}&api_key={api_key}"
+            f"&include_release_dates_with_no_data=true"
+            f"&realtime_start={today}&file_type=json"
+        )
+        
+        response = requests.get(release_dates_url, headers=headers, timeout=30)
+        response.raise_for_status()
+        dates_data = response.json()
+        
+        # Extract future release dates
+        release_dates = dates_data.get('release_dates', [])
+        if release_dates:
+            # Get the first (soonest) future release date
+            next_date = release_dates[0].get('date', 'TBD')
+        else:
+            next_date = 'TBD'
+        
+        return {
+            'series_id': series_id,
+            'release_name': release_name,
+            'next_release_date': next_date,
+            'release_id': release_id
+        }
+    
+    except requests.exceptions.RequestException as e:
+        # Network or API error
+        return {
+            'series_id': series_id,
+            'release_name': 'Error',
+            'next_release_date': 'TBD',
+            'release_id': None,
+            'error': str(e)
+        }
+    except Exception as e:
+        # Other errors (parsing, etc.)
+        return {
+            'series_id': series_id,
+            'release_name': 'Error',
+            'next_release_date': 'TBD',
+            'release_id': None,
+            'error': str(e)
+        }

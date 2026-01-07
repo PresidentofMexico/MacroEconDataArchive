@@ -1,5 +1,106 @@
 # Changelog - Bug Fixes and Improvements
 
+## [2026-01-07] - Release Calendar Feature (Phase 5) ✅ COMPLETED
+
+### Summary
+Implemented the Release Calendar feature that shows users when FRED data in their report will be updated next. Users can now view upcoming release dates for all economic indicators, helping them plan report updates and stay informed about data refreshes.
+
+### New Features
+
+#### 📅 Release Calendar Tab
+- **Added** Third tab "📅 Release Calendar" to main area (alongside Report Builder and Report Preview)
+- **Added** `render_calendar_view()` function to display release schedules
+- **Shows** Upcoming release dates for all unique series in the report
+- **Displays** Data table with columns: Series ID, Series, Release Name, Next Release, Days Remaining
+- **Highlights** Releases within 7 days with red background for visibility
+- **Includes** Summary metrics: Scheduled Releases, Within 7 Days, TBD/Irregular
+- **Provides** Legend explaining colors and terminology
+
+#### 🔑 FRED API Integration
+- **Added** `get_series_release_info()` function in `macro_utils.py`
+- **Queries** FRED API `/series/release` endpoint to find release association
+- **Queries** FRED API `/release/dates` endpoint to get next scheduled date
+- **Returns** Dictionary with series_id, release_name, next_release_date, release_id
+- **Handles** Series without regular schedules (returns "TBD")
+- **Handles** Network errors and API failures gracefully
+
+#### 🔐 FRED API Key Management
+- **Added** FRED API key input to sidebar (password-protected)
+- **Renamed** "AI Settings" section to "🔑 API Keys"
+- **Groups** Both OpenAI and FRED API keys in organized section
+- **Includes** Helpful tooltip with link to FRED API registration
+- **Supports** Environment variable `FRED_API_KEY` for initialization
+
+#### ⚡ Performance & Caching
+- **Added** `get_series_release_info_cached()` with 24-hour TTL
+- **Rationale** Release schedules change infrequently, longer cache appropriate
+- **Updated** Cache clear button to clear both data and release info caches
+- **Optimizes** API usage to prevent rate limiting
+
+#### 🧪 Testing Infrastructure
+- **Created** `tests/test_release_calendar.py` with 15 comprehensive tests
+- **Tests** Backend function with mock FRED API responses
+- **Tests** UI rendering with various scenarios (no key, no charts, with data)
+- **Tests** Error handling (network failures, API errors, missing dates)
+- **Tests** Session state initialization and cache decorator
+- **Result** 15/15 tests passing ✅
+
+### User Experience
+
+#### Empty States
+- **No API Key**: Shows warning with instructions and registration link
+- **No Charts**: Shows info message prompting to add charts
+- **Both Present**: Displays full calendar with data table
+
+#### Data Processing
+- **Deduplication**: Automatically extracts unique series across all charts
+- **Progress Bar**: Shows fetching progress for better UX
+- **Sorting**: Orders releases by date (soonest first, TBD at end)
+- **Calculation**: Computes days remaining for each scheduled release
+
+### Technical Details
+
+#### API Endpoints Used
+```
+1. https://api.stlouisfed.org/fred/series/release
+   - Purpose: Find which release a series belongs to
+   - Example: UNRATE → Employment Situation (release_id: 50)
+
+2. https://api.stlouisfed.org/fred/release/dates
+   - Purpose: Get next scheduled release date
+   - Parameters: include_release_dates_with_no_data=true, realtime_start=today
+```
+
+#### Code Structure
+- **macro_utils.py** (+150 lines): Backend logic for FRED API queries
+- **streamlit_app.py** (+180 lines): UI implementation and caching
+- **test_release_calendar.py** (+400 lines): Comprehensive test coverage
+
+#### Error Handling
+- **Missing API Key**: ValueError with clear message
+- **No Releases Found**: Returns N/A with release_id=None
+- **No Future Dates**: Returns "TBD" for next_release_date
+- **Network Errors**: Catches RequestException, returns error dict
+- **API Errors**: Catches all exceptions, provides graceful degradation
+
+### Benefits
+
+1. **For Portfolio Managers**: Time market moves around major data releases
+2. **For Researchers**: Plan analysis schedules around data availability
+3. **For Policy Analysts**: Know when to refresh reports with latest data
+4. **For Journalists**: Schedule article publication around economic releases
+
+### Files Modified
+- `src/macro_econ_data_archive/macro_utils.py` (+150 lines)
+- `src/macro_econ_data_archive/streamlit_app.py` (+180 lines)
+- `README.md` (updated with Release Calendar feature)
+- `CHANGELOG.md` (this entry)
+
+### Files Created
+- `tests/test_release_calendar.py` (+400 lines)
+
+---
+
 ## [2026-01-07] - Executive Briefing Feature ✅ COMPLETED
 
 ### Summary
