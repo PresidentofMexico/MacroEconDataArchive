@@ -13,3 +13,7 @@ kaleido>=0.2.1
 
 # AI-powered narrative generation
 openai>=1.0.0
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0

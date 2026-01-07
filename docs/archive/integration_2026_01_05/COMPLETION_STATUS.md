@@ -41,7 +41,7 @@ User directive: "do not stop until you are at 100%"
   - `fetch_fred_cached()` wrapper function
   - Cache clear button in UI
   - Error handling for FRED exceptions (FREDRateLimitError, FREDServerError)
-  
+
 - From PR #13 (+137 lines):
   - `SeriesInfo` dataclass for multi-series support
   - Update `ChartConfig` to use `List[SeriesInfo]`

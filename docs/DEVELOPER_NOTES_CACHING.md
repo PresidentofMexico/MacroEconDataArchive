@@ -34,7 +34,7 @@ Located in `src/macro_econ_data_archive/macro_utils.py`
 
 ```python
 def fetch_fred(
-    series_ids: List[str], 
+    series_ids: List[str],
     start: str = "1990-01-01",
     max_retries: int = 3,
     backoff_factor: float = 2.0
@@ -74,11 +74,11 @@ Delays between retries: 2^(attempt-1) seconds
 for attempt in range(max_retries):
     try:
         response = requests.get(url, headers=headers, timeout=30)
-        
+
         # Fail fast on rate limit
         if response.status_code == 403:
             raise FREDRateLimitError(...)
-        
+
         # Retry on server errors
         if 500 <= response.status_code < 600:
             if attempt < max_retries - 1:
@@ -87,11 +87,11 @@ for attempt in range(max_retries):
                 continue
             else:
                 raise FREDServerError(...)
-        
+
         # Success
         response.raise_for_status()
         return process_data(response)
-        
+
     except requests.RequestException as e:
         # Network error - retry
         if attempt < max_retries - 1:

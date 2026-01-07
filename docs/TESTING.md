@@ -204,31 +204,31 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
-    
+
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
-    
+
     - name: Run verification
       run: python verify_installation.py
-    
+
     - name: Run CLI tests
       run: python test_cli_smoke.py
-    
+
     - name: Run Streamlit tests
       run: python test_streamlit_smoke.py
-    
+
     - name: Run template tests
       run: python test_templates.py
-    
+
     - name: Run caching tests
       run: python test_caching_and_retry.py
 ```
@@ -257,7 +257,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 def test_feature_one():
     """Test feature one."""
     print("Testing feature one...")
-    
+
     try:
         # Test logic here
         assert condition, "Error message"
@@ -273,32 +273,32 @@ def main():
     print("=" * 70)
     print("New Feature Tests")
     print("=" * 70)
-    
+
     tests = [
         ("Feature One", test_feature_one),
     ]
-    
+
     results = []
     for name, test_func in tests:
         result = test_func()
         results.append((name, result))
-    
+
     # Print summary
     print("\n" + "=" * 70)
     print("Test Summary")
     print("=" * 70)
-    
+
     passed = sum(1 for _, result in results if result)
     total = len(results)
-    
+
     for test_name, result in results:
         status = "✓ PASS" if result else "✗ FAIL"
         print(f"{test_name:<30} {status}")
-    
+
     print("-" * 70)
     print(f"Total: {passed}/{total} tests passed")
     print("=" * 70)
-    
+
     return 0 if passed == total else 1
 
 

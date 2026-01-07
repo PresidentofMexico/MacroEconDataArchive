@@ -164,7 +164,7 @@ Total: 7/7 tests passed (100%)
 
 ### Template Loading
 **Before:** Single "Load Template" button (always appends)  
-**After:** 
+**After:**
 - No existing charts: "Load Template" button
 - Existing charts: "Replace" and "Append" buttons
 

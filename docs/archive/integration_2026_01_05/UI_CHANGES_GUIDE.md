@@ -40,7 +40,7 @@ Chart Title: GDP and CPI Comparison
 
 ### After (Explicit Warning)
 ```
-⚠️ Chart 'GDP and CPI Comparison': Missing data columns for series: CPI. 
+⚠️ Chart 'GDP and CPI Comparison': Missing data columns for series: CPI.
    These series will not appear in the chart.
 
 Chart Title: GDP and CPI Comparison
@@ -81,11 +81,11 @@ ValueError: Unexpected FRED response for series 'CPIAUCSL': missing 'CPIAUCSL' c
 **After:**
 ```
 Option 1 (Fallback succeeds):
-⚠️ Warning: FRED response for 'CPIAUCSL' missing expected column, 
+⚠️ Warning: FRED response for 'CPIAUCSL' missing expected column,
    using 'value' instead. This may indicate a FRED API change.
-   
+
 Option 2 (No fallback available):
-ValueError: Unexpected FRED response for series 'CPIAUCSL': missing 'CPIAUCSL' column 
+ValueError: Unexpected FRED response for series 'CPIAUCSL': missing 'CPIAUCSL' column
 and no numeric fallback columns found. Available columns: ['DATE', 'notes']
 ```
 
@@ -99,13 +99,13 @@ Exception: write_image error
 **After:**
 ```
 Option 1 (Kaleido-related):
-ImportError: Kaleido is required for PDF export but not properly installed. 
+ImportError: Kaleido is required for PDF export but not properly installed.
 Please reinstall with: pip install -U kaleido
 Original error: kaleido not found
 
 Option 2 (Other errors):
-RuntimeError: Failed to save chart as PNG for PDF export. 
-This may be due to missing system dependencies (e.g., chromium). 
+RuntimeError: Failed to save chart as PNG for PDF export.
+This may be due to missing system dependencies (e.g., chromium).
 Error: Permission denied
 ```
 
@@ -161,7 +161,7 @@ if st.session_state.charts:
 ```python
 if sid not in raw.columns:
     # NEW: Fallback to first numeric column
-    numeric_cols = [col for col in raw.columns if col != date_col and 
+    numeric_cols = [col for col in raw.columns if col != date_col and
                    pd.api.types.is_numeric_dtype(raw[col])]
     if numeric_cols:
         actual_col = numeric_cols[0]

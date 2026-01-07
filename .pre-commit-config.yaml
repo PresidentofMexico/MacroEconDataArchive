@@ -1,0 +1,44 @@
+# Pre-commit hooks for code quality
+# See https://pre-commit.com for more information
+# Install: pip install pre-commit
+# Setup: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      
+      # Ensure files end with a newline
+      - id: end-of-file-fixer
+        exclude: \.json$
+      
+      # Check YAML files are valid
+      - id: check-yaml
+        args: [--safe]
+      
+      # Prevent large files from being committed
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      
+      # Check for merge conflict markers
+      - id: check-merge-conflict
+      
+      # Check for broken symlinks
+      - id: check-symlinks
+      
+      # Ensure JSON files are valid
+      - id: check-json
+      
+      # Check for files that would conflict on case-insensitive filesystems
+      - id: check-case-conflict
+      
+      # Check for Python syntax errors
+      - id: check-ast
+      
+      # Fix mixed line endings
+      - id: mixed-line-ending
+        args: [--fix=lf]
