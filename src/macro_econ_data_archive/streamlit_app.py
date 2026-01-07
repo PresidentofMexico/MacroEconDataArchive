@@ -30,8 +30,8 @@ from .macro_utils import (
     FREDServerError
 )
 
-# Import PDF generation from original script
-from .report_generator import assemble_pdf
+# Import PDF generation from report generator
+from .report_generator import assemble_pdf, generate_pdf_report
 
 
 # --------------------------
@@ -1345,36 +1345,112 @@ def generate_executive_briefing():
 # --------------------------
 
 def export_to_pdf():
-    """Export current report to PDF."""
+    """Export current report to PDF with executive summary and release calendar."""
     if not st.session_state.charts:
         st.error("No charts to export")
         return
 
     try:
-        with st.spinner("Generating PDF..."):
+        with st.spinner("Generating professional PDF report..."):
             # Create temporary directory for images
             tmpdir = Path("_charts_tmp")
             tmpdir.mkdir(exist_ok=True)
 
-            # Save charts as static images
-            png_paths = []
+            # Step 1: Prepare chart data (images + narratives)
+            charts_data = []
             for idx, chart in enumerate(st.session_state.charts):
+                # Save chart as PNG
                 fig = create_plotly_chart(chart)
                 png_path = tmpdir / f"chart_{idx:03d}.png"
                 save_plotly_as_png(fig, png_path)
-                png_paths.append(png_path)
+                
+                # Collect chart info
+                charts_data.append({
+                    'title': chart.title,
+                    'image_path': str(png_path),
+                    'narrative': chart.narrative or ""
+                })
 
-            # Generate PDF
+            # Step 2: Get executive summary from session state
+            executive_summary = st.session_state.executive_summary or ""
+
+            # Step 3: Prepare release calendar data
+            calendar_df = None
+            if st.session_state.fred_api_key:
+                try:
+                    # Extract unique series IDs from all charts
+                    unique_series = set()
+                    series_info_map = {}
+                    
+                    for chart in st.session_state.charts:
+                        for series in chart.series:
+                            unique_series.add(series.series_id)
+                            series_info_map[series.series_id] = series.series_label
+                    
+                    series_list = sorted(unique_series)
+                    
+                    # Fetch release info for each series
+                    release_data = []
+                    for series_id in series_list:
+                        try:
+                            info = get_series_release_info_cached(
+                                series_id, 
+                                st.session_state.fred_api_key
+                            )
+                            
+                            # Calculate days remaining
+                            next_date = info.get('next_release_date', 'TBD')
+                            if next_date != 'TBD':
+                                try:
+                                    release_date = pd.to_datetime(next_date)
+                                    today = pd.Timestamp.now().normalize()
+                                    days_remaining = (release_date - today).days
+                                except:
+                                    days_remaining = 'N/A'
+                            else:
+                                days_remaining = 'N/A'
+                            
+                            release_data.append({
+                                'Series ID': series_id,
+                                'Series': series_info_map.get(series_id, series_id),
+                                'Release Name': info.get('release_name', 'Unknown'),
+                                'Next Release': next_date,
+                                'Days Remaining': days_remaining
+                            })
+                        except Exception:
+                            # Skip series with errors
+                            continue
+                    
+                    # Create DataFrame if we have data
+                    if release_data:
+                        calendar_df = pd.DataFrame(release_data)
+                        
+                        # Sort by next release date
+                        def sort_key(row):
+                            if row['Next Release'] == 'TBD':
+                                return (1, '')
+                            else:
+                                return (0, row['Next Release'])
+                        
+                        calendar_df['_sort_key'] = calendar_df.apply(sort_key, axis=1)
+                        calendar_df = calendar_df.sort_values('_sort_key').drop('_sort_key', axis=1)
+                
+                except Exception as e:
+                    # If calendar fetch fails, continue without it
+                    st.warning(f"Could not fetch release calendar data: {e}")
+                    calendar_df = None
+
+            # Step 4: Generate PDF using new function
             output_path = tmpdir / "report.pdf"
-            as_of = datetime.today().strftime("%B %d, %Y")
-            assemble_pdf(
-                st.session_state.report_title,
-                as_of,
-                png_paths,
-                output_path
+            generate_pdf_report(
+                filename=output_path,
+                title=st.session_state.report_title,
+                executive_summary=executive_summary,
+                calendar_data=calendar_df,
+                charts=charts_data
             )
 
-            # Provide download
+            # Step 5: Provide download button
             with open(output_path, "rb") as f:
                 pdf_bytes = f.read()
 
@@ -1382,13 +1458,17 @@ def export_to_pdf():
                 label="📥 Download PDF",
                 data=pdf_bytes,
                 file_name=f"macro_report_{datetime.today().strftime('%Y%m%d')}.pdf",
-                mime="application/pdf"
+                mime="application/pdf",
+                key="pdf_download"
             )
 
-            st.success("✅ PDF generated successfully!")
+            st.success("✅ Professional PDF report generated successfully!")
 
     except Exception as e:
         st.error(f"Error generating PDF: {str(e)}")
+        import traceback
+        st.error(f"Details: {traceback.format_exc()}")
+
 
 
 # --------------------------
