@@ -81,7 +81,6 @@ jobs:
           PYTHONPATH: .
         continue-on-error: true
       
-      # FIX 2: Commented out Codecov upload to prevent token errors
       # - name: Upload coverage reports
       #   uses: codecov/codecov-action@v4
       #   with:
