@@ -321,7 +321,18 @@ def test_render_calendar_view_calculates_days(mock_df, mock_st, mock_get_release
 def test_cache_decorator_applied():
     """Test that cache decorator is applied to release info function."""
     from src.macro_econ_data_archive.streamlit_app import get_series_release_info_cached
+    import inspect
     
+    # --- DEBUG: Print source to see if decorator exists in CI ---
+    print("\n[DEBUG] Inspecting get_series_release_info_cached...")
+    try:
+        print(f"Type: {type(get_series_release_info_cached)}")
+        src = inspect.getsource(get_series_release_info_cached)
+        print(f"Source Code:\n{src}")
+    except Exception as e:
+        print(f"[DEBUG] Could not get source: {e}")
+    # ------------------------------------------------------------
+
     # Check function has cache attributes (streamlit cache_data adds these)
     assert hasattr(get_series_release_info_cached, '__wrapped__') or \
            'cache' in str(type(get_series_release_info_cached))
