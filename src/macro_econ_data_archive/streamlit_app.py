@@ -314,7 +314,7 @@ def generate_narrative(
 
         system_prompt = """You are a Chief Economist writing a flash update. 
 
-CRITICAL: Focus 80% of your analysis on the last 3-6 months of data. Start your response immediately with the latest figure (e.g., 'As of [Latest Date], [Series] currently stands at [Value]...'). Do not waste space recapping data from 2 years ago unless it provides critical contrast.
+CRITICAL: Focus 80% of your analysis on the last 30 days of data. Start your response immediately with the latest figure (e.g., 'As of [Latest Date], [Series] currently stands at [Value]...'). Do not waste space recapping data from 2 years ago unless it provides critical contrast.
 
 Your writing style:
 - Professional, dense (Federal Reserve Beige Book style)
