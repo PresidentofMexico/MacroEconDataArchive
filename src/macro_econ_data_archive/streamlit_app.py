@@ -81,6 +81,205 @@ class ChartConfig:
 
 
 # --------------------------
+# Popular Charts Library
+# --------------------------
+
+POPULAR_CHARTS = [
+    # Growth Indicators
+    {
+        'label': '📈 Real GDP Growth (QoQ SAAR)',
+        'category': 'Growth',
+        'series_input': 'GDPC1, Real GDP',
+        'frequency': 'quarterly',
+        'transform': 'qoq_saar',
+        'units': 'Percent',
+        'title': 'Real GDP Growth (Quarter over Quarter, Annualized)'
+    },
+    {
+        'label': '🛒 Retail Sales (YoY)',
+        'category': 'Growth',
+        'series_input': 'RSXFS, Advance Retail Sales',
+        'frequency': 'monthly',
+        'transform': 'yoy',
+        'units': 'Percent',
+        'title': 'Retail Sales (Year-over-Year)'
+    },
+    {
+        'label': '🏭 Industrial Production (YoY)',
+        'category': 'Growth',
+        'series_input': 'INDPRO, Industrial Production Index',
+        'frequency': 'monthly',
+        'transform': 'yoy',
+        'units': 'Percent',
+        'title': 'Industrial Production (Year-over-Year)'
+    },
+    
+    # Inflation Indicators
+    {
+        'label': '💹 CPI Inflation (YoY)',
+        'category': 'Inflation',
+        'series_input': 'CPIAUCSL, Consumer Price Index',
+        'frequency': 'monthly',
+        'transform': 'yoy',
+        'units': 'Percent',
+        'title': 'CPI Inflation (Year-over-Year)'
+    },
+    {
+        'label': '💰 PCE Inflation (YoY)',
+        'category': 'Inflation',
+        'series_input': 'PCEPI, Personal Consumption Expenditures Price Index',
+        'frequency': 'monthly',
+        'transform': 'yoy',
+        'units': 'Percent',
+        'title': 'PCE Inflation (Year-over-Year)'
+    },
+    {
+        'label': '🏢 PPI (YoY)',
+        'category': 'Inflation',
+        'series_input': 'PPIACO, Producer Price Index: All Commodities',
+        'frequency': 'monthly',
+        'transform': 'yoy',
+        'units': 'Percent',
+        'title': 'Producer Price Index (Year-over-Year)'
+    },
+    {
+        'label': '📊 5-Year Breakeven Inflation',
+        'category': 'Inflation',
+        'series_input': 'T5YIE, 5-Year Breakeven Inflation Rate',
+        'frequency': 'daily',
+        'transform': 'level',
+        'units': 'Percent',
+        'title': '5-Year Breakeven Inflation Rate'
+    },
+    
+    # Labor Market Indicators
+    {
+        'label': '👥 Unemployment Rate',
+        'category': 'Labor',
+        'series_input': 'UNRATE, Unemployment Rate',
+        'frequency': 'monthly',
+        'transform': 'level',
+        'units': 'Percent',
+        'title': 'Unemployment Rate'
+    },
+    {
+        'label': '💼 Nonfarm Payrolls (MoM Change)',
+        'category': 'Labor',
+        'series_input': 'PAYEMS, All Employees: Total Nonfarm',
+        'frequency': 'monthly',
+        'transform': 'level',
+        'units': 'Thousands of Persons',
+        'title': 'Nonfarm Payrolls'
+    },
+    {
+        'label': '💵 Average Hourly Earnings (YoY)',
+        'category': 'Labor',
+        'series_input': 'AHETPI, Average Hourly Earnings',
+        'frequency': 'monthly',
+        'transform': 'yoy',
+        'units': 'Percent',
+        'title': 'Average Hourly Earnings Growth (Year-over-Year)'
+    },
+    
+    # Interest Rates
+    {
+        'label': '🏦 Federal Funds Rate',
+        'category': 'Rates',
+        'series_input': 'FEDFUNDS, Effective Federal Funds Rate',
+        'frequency': 'monthly',
+        'transform': 'level',
+        'units': 'Percent',
+        'title': 'Effective Federal Funds Rate'
+    },
+    {
+        'label': '📈 10-Year Treasury Yield',
+        'category': 'Rates',
+        'series_input': 'DGS10, 10-Year Treasury Constant Maturity Rate',
+        'frequency': 'daily',
+        'transform': 'level',
+        'units': 'Percent',
+        'title': '10-Year Treasury Yield'
+    },
+    {
+        'label': '📉 2-Year Treasury Yield',
+        'category': 'Rates',
+        'series_input': 'DGS2, 2-Year Treasury Constant Maturity Rate',
+        'frequency': 'daily',
+        'transform': 'level',
+        'units': 'Percent',
+        'title': '2-Year Treasury Yield'
+    },
+    {
+        'label': '🏠 30-Year Mortgage Rate',
+        'category': 'Rates',
+        'series_input': 'MORTGAGE30US, 30-Year Fixed Rate Mortgage Average',
+        'frequency': 'weekly',
+        'transform': 'level',
+        'units': 'Percent',
+        'title': '30-Year Fixed Mortgage Rate'
+    },
+    
+    # Housing Indicators
+    {
+        'label': '🏗️ Housing Starts',
+        'category': 'Housing',
+        'series_input': 'HOUST, Housing Starts',
+        'frequency': 'monthly',
+        'transform': 'level',
+        'units': 'Thousands of Units',
+        'title': 'Housing Starts: Total'
+    },
+    {
+        'label': '🏘️ Case-Shiller Home Price Index (YoY)',
+        'category': 'Housing',
+        'series_input': 'CSUSHPISA, S&P/Case-Shiller U.S. National Home Price Index',
+        'frequency': 'monthly',
+        'transform': 'yoy',
+        'units': 'Percent',
+        'title': 'Case-Shiller Home Price Index (Year-over-Year)'
+    },
+    
+    # Miscellaneous / Market Indicators
+    {
+        'label': '🥇 Gold Price',
+        'category': 'Markets',
+        'series_input': 'GOLDAMGBD228NLBM, Gold Fixing Price',
+        'frequency': 'daily',
+        'transform': 'level',
+        'units': 'USD per Troy Ounce',
+        'title': 'Gold Price (London Fix)'
+    },
+    {
+        'label': '🛢️ Oil Price (WTI)',
+        'category': 'Markets',
+        'series_input': 'DCOILWTICO, Crude Oil Prices: West Texas Intermediate',
+        'frequency': 'daily',
+        'transform': 'level',
+        'units': 'USD per Barrel',
+        'title': 'Crude Oil Price (WTI)'
+    },
+    {
+        'label': '📊 S&P 500 Index',
+        'category': 'Markets',
+        'series_input': 'SP500, S&P 500',
+        'frequency': 'daily',
+        'transform': 'level',
+        'units': 'Index',
+        'title': 'S&P 500 Stock Market Index'
+    },
+    {
+        'label': '📉 VIX (Volatility Index)',
+        'category': 'Markets',
+        'series_input': 'VIXCLS, CBOE Volatility Index',
+        'frequency': 'daily',
+        'transform': 'level',
+        'units': 'Index',
+        'title': 'CBOE Volatility Index (VIX)'
+    },
+]
+
+
+# --------------------------
 # Session State Initialization
 # --------------------------
 
@@ -945,34 +1144,39 @@ def render_sidebar():
 
     st.sidebar.markdown("---")
 
-    # Quick examples
-    st.sidebar.subheader("Quick Add Examples")
-    if st.sidebar.button("📈 Real GDP Growth", use_container_width=True):
-        add_chart_to_report(
-            "Real GDP Growth (Quarter over Quarter, Annualized)",
-            "GDPC1, Real GDP",
-            "quarterly",
-            "qoq_saar",
-            "Percent"
+    # Chart Library
+    st.sidebar.subheader("📚 Chart Library")
+    
+    # Create a list of chart labels for the dropdown
+    chart_options = ["-- Select an Indicator --"] + [chart['label'] for chart in POPULAR_CHARTS]
+    
+    selected_chart_label = st.sidebar.selectbox(
+        "Select an Indicator",
+        options=chart_options,
+        key="chart_library_selector",
+        help="Choose from 20+ popular economic indicators organized by category"
+    )
+    
+    # Find the selected chart configuration
+    selected_chart = None
+    if selected_chart_label != "-- Select an Indicator --":
+        selected_chart = next(
+            (chart for chart in POPULAR_CHARTS if chart['label'] == selected_chart_label),
+            None
         )
-
-    if st.sidebar.button("📊 Real Consumer Spending", use_container_width=True):
-        add_chart_to_report(
-            "Real Consumer Spending (Year-over-Year)",
-            "PCEC96, Real Personal Consumption Expenditures",
-            "monthly",
-            "yoy",
-            "Percent"
-        )
-
-    if st.sidebar.button("💰 Federal Debt to GDP", use_container_width=True):
-        add_chart_to_report(
-            "Federal Debt as Percent of GDP",
-            "GFDEGDQ188S, Federal Debt to GDP",
-            "quarterly",
-            "level",
-            "Percent of GDP"
-        )
+    
+    # Show category and add button if a chart is selected
+    if selected_chart:
+        st.sidebar.caption(f"Category: {selected_chart['category']}")
+        
+        if st.sidebar.button("➕ Add to Report", use_container_width=True, key="add_from_library"):
+            add_chart_to_report(
+                title=selected_chart['title'],
+                series_input=selected_chart['series_input'],
+                frequency=selected_chart['frequency'],
+                transform=selected_chart['transform'],
+                units=selected_chart['units']
+            )
 
 
 def add_chart_to_report(title: str, series_input: str,
