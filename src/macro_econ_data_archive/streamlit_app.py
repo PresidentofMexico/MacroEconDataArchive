@@ -286,12 +286,18 @@ def load_template_charts(template_data: Dict, start_date: str) -> List[ChartConf
 # AI Integration
 # --------------------------
 
-def generate_narrative(data_summary: str, series_name: str, api_key: str, model: str = "gpt-4o-mini") -> str:
+def generate_narrative(
+    data_summary: Dict,
+    series_name: str,
+    api_key: str,
+    model: str = "gpt-4o-mini"
+) -> str:
     """
     Generate professional economic analysis using ChatGPT 4o-mini.
+    Uses a "Breaking News" style focusing on the most recent data.
 
     Args:
-        data_summary: Recent data in CSV or markdown table format
+        data_summary: Dictionary with formatted_table, latest_date, latest_values, growth_3m
         series_name: Name of the economic series being analyzed
         api_key: OpenAI API key
         model: Model to use (default: gpt-4o-mini)
@@ -302,30 +308,45 @@ def generate_narrative(data_summary: str, series_name: str, api_key: str, model:
     try:
         client = OpenAI(api_key=api_key)
 
-        system_prompt = """You are a Chief Macro Economist with expertise in economic data analysis.
-Your writing style matches that of Federal Reserve publications and top-tier investment bank strategy notes.
+        system_prompt = """You are a Chief Economist writing a flash update. 
 
-When analyzing data:
-- Identify key trends, peaks, troughs, and recent momentum
-- Use precise, professional language (avoid hyperbole like "skyrocketed" or "plummeted")
-- Prefer passive voice where appropriate for formality
-- Be concise and data-driven
-- Reference specific values and time periods
-- Avoid conversational fillers
+CRITICAL: Focus 80% of your analysis on the last 3-6 months of data. Start your response immediately with the latest figure (e.g., 'As of [Latest Date], [Series] currently stands at [Value]...'). Do not waste space recapping data from 2 years ago unless it provides critical contrast.
 
-Keep analysis to 2-3 paragraphs maximum."""
+Your writing style:
+- Professional, dense (Federal Reserve Beige Book style)
+- Use precise, professional language (avoid hyperbole)
+- Be concise and data-driven with specific values and time periods
+- Emphasize recent momentum and direction
+- Use "Breaking News" urgency for latest movements
 
-        user_prompt = f"""Analyze the following economic data for {series_name}.
+Keep analysis to 2 paragraphs maximum."""
 
-Recent Data:
-{data_summary}
+        # Format latest values and momentum for the prompt
+        latest_values_text = ""
+        if data_summary.get("latest_values"):
+            latest_values_text = ", ".join([
+                f"{label}: {value:.2f}"
+                for label, value in data_summary["latest_values"].items()
+            ])
 
-Provide a professional analysis highlighting:
-1. Current level and recent trend
-2. Notable peaks, troughs, or inflection points in the recent period
-3. The momentum and directional bias
+        momentum_text = ""
+        if data_summary.get("growth_3m"):
+            momentum_parts = []
+            for label, pct in data_summary["growth_3m"].items():
+                direction = "up" if pct > 0 else "down"
+                momentum_parts.append(f"{label} is {direction} {abs(pct):.1f}%")
+            momentum_text = ", ".join(momentum_parts)
+        else:
+            momentum_text = "Insufficient data for 3-month trend"
 
-Keep it professional and concise."""
+        user_prompt = f"""LATEST DATA ({data_summary.get('latest_date', 'Unknown')}): {latest_values_text}
+
+RECENT MOMENTUM (3-month trend): {momentum_text}
+
+FULL DATA CONTEXT (Last 24 Periods):
+{data_summary.get('formatted_table', 'No data available')}
+
+Analyze the immediate direction of {series_name}."""
 
         response = client.chat.completions.create(
             model=model,
@@ -343,12 +364,16 @@ Keep it professional and concise."""
         return f"Error generating narrative: {str(e)}"
 
 
-def generate_executive_summary(context_data: str, api_key: str, model: str = "gpt-4o-mini") -> str:
+def generate_executive_summary(
+    context_data: Dict,
+    api_key: str,
+    model: str = "gpt-4o-mini"
+) -> str:
     """
     Generate holistic executive briefing using ChatGPT 4o-mini.
     
     Args:
-        context_data: Aggregate data from all charts
+        context_data: Dictionary with formatted_text, latest_overall_date, chart_summaries
         api_key: OpenAI API key
         model: Model to use (default: gpt-4o-mini)
     
@@ -358,19 +383,27 @@ def generate_executive_summary(context_data: str, api_key: str, model: str = "gp
     try:
         client = OpenAI(api_key=api_key)
         
-        system_prompt = """You are the Chief Economist for a major central bank. You have been provided with a dashboard of key economic indicators. Write a 1-page 'Executive Briefing' summarizing the overall state of the economy. Structure your response as follows:
+        system_prompt = """You are the Chief Economist for a major central bank writing a flash briefing.
 
-**Executive Summary:** A 2-3 sentence high-level thesis (e.g., 'The economy is cooling but remains resilient...').
+CRITICAL: Start your Executive Summary with "As of [Latest Date]..." to immediately establish timeliness. Focus 80% on recent momentum (last 3-6 months) rather than historical trends. This is a "Breaking News" style update.
 
-**Key Drivers:** Synthesize the trends from the provided charts (e.g., connect Inflation falling to Interest Rate pauses).
+Structure your response:
+**Executive Summary:** Start with "As of [Latest Date]..." then provide 2-3 sentence high-level thesis about current economic state.
 
-**Outlook:** A cautious forward-looking statement based on the momentum.
+**Key Drivers:** Synthesize recent trends from the provided charts, connecting indicators (e.g., Inflation falling to Interest Rate pauses). Focus on what's happening NOW.
 
-Style: Professional, objective, dense (Federal Reserve Beige Book style). No flowery language."""
+**Outlook:** A cautious forward-looking statement based on recent momentum.
+
+Style: Professional, dense (Federal Reserve Beige Book style). No flowery language. Maximum 1 page."""
         
-        user_prompt = f"""Here is the data for the current economic dashboard:
+        # Extract latest date for explicit inclusion
+        latest_date = context_data.get("latest_overall_date", "Unknown")
+        
+        user_prompt = f"""Here is the current economic dashboard (data as of {latest_date}):
 
-{context_data}"""
+{context_data.get('formatted_text', 'No data available')}
+
+Write a flash executive briefing focusing on the most recent developments."""
         
         response = client.chat.completions.create(
             model=model,
@@ -500,9 +533,9 @@ def save_plotly_as_png(fig: go.Figure, output_path: Path) -> None:
 # Data Preparation
 # --------------------------
 
-def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], periods: int = 24) -> str:
+def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], periods: int = 24) -> Dict:
     """
-    Prepare recent data summary for LLM context.
+    Prepare recent data summary for LLM context with metadata.
     Supports both single and multi-series data.
 
     Args:
@@ -511,22 +544,59 @@ def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], period
         periods: Number of recent periods to include (default: 24)
 
     Returns:
-        Formatted data summary as markdown table
+        Dictionary containing:
+            - formatted_table: Markdown table string
+            - latest_date: Date of last row (str or None)
+            - latest_values: Dict of {Series Label: Value} for last row
+            - growth_3m: Dict of {Series Label: % change} over last 3 entries
     """
+    # Default empty response
+    empty_response = {
+        "formatted_table": "No data available",
+        "latest_date": None,
+        "latest_values": {},
+        "growth_3m": {}
+    }
+
     if df is None or df.empty:
-        return "No data available"
+        return empty_response
 
     # Get series IDs that exist in the dataframe
     available_series = [s for s in series_list if s.series_id in df.columns]
 
     if not available_series:
-        return "No data available"
+        return empty_response
 
     # Get last N periods
     recent_data = df[[s.series_id for s in available_series]].dropna(how='all').tail(periods)
 
     if recent_data.empty:
-        return "No data available"
+        return empty_response
+
+    # Extract metadata from the data
+    # 1. Latest date
+    latest_date = recent_data.index[-1]
+    latest_date_str = latest_date.strftime("%Y-%m-%d") if hasattr(latest_date, 'strftime') else str(latest_date)
+
+    # 2. Latest values for each series
+    latest_row = recent_data.iloc[-1]
+    latest_values = {}
+    for s in available_series:
+        value = latest_row[s.series_id]
+        if pd.notna(value):
+            latest_values[s.series_label] = float(value)
+
+    # 3. Growth over last 3 entries (3-month momentum)
+    growth_3m = {}
+    if len(recent_data) >= 3:
+        for s in available_series:
+            series_data = recent_data[s.series_id].dropna()
+            if len(series_data) >= 3:
+                latest_val = series_data.iloc[-1]
+                three_months_ago = series_data.iloc[-3]
+                if pd.notna(latest_val) and pd.notna(three_months_ago) and three_months_ago != 0:
+                    pct_change = ((latest_val - three_months_ago) / abs(three_months_ago)) * 100
+                    growth_3m[s.series_label] = float(pct_change)
 
     # Format as markdown table
     if len(available_series) == 1:
@@ -551,10 +621,17 @@ def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], period
                 values.append(f"{value:.2f}" if pd.notna(value) else "N/A")
             table_lines.append(f"| {date_str} | " + " | ".join(values) + " |")
 
-    return "\n".join(table_lines)
+    formatted_table = "\n".join(table_lines)
+
+    return {
+        "formatted_table": formatted_table,
+        "latest_date": latest_date_str,
+        "latest_values": latest_values,
+        "growth_3m": growth_3m
+    }
 
 
-def prepare_holistic_data_summary(charts: List[ChartConfig]) -> str:
+def prepare_holistic_data_summary(charts: List[ChartConfig]) -> Dict:
     """
     Prepare holistic data summary from all charts for executive briefing.
     
@@ -562,12 +639,21 @@ def prepare_holistic_data_summary(charts: List[ChartConfig]) -> str:
         charts: List of ChartConfig objects
     
     Returns:
-        Formatted markdown string with all chart data summaries
+        Dictionary containing:
+            - formatted_text: Formatted markdown string with all chart data summaries
+            - latest_overall_date: Most recent date across all charts
+            - chart_summaries: List of summary dicts for each chart
     """
     if not charts:
-        return "No charts available for analysis."
+        return {
+            "formatted_text": "No charts available for analysis.",
+            "latest_overall_date": None,
+            "chart_summaries": []
+        }
     
     summary_sections = []
+    chart_summaries = []
+    latest_overall_date = None
     
     for idx, chart in enumerate(charts, 1):
         # Add section header
@@ -577,12 +663,28 @@ def prepare_holistic_data_summary(charts: List[ChartConfig]) -> str:
         summary_sections.append(f"**Transform:** {chart.transform} | **Frequency:** {chart.frequency} | **Units:** {chart.units}")
         summary_sections.append("")
         
-        # Add data table (limited to 12 periods to save tokens)
-        data_table = prepare_data_summary(chart.data, chart.series, periods=12)
-        summary_sections.append(data_table)
+        # Get data summary with metadata (limited to 12 periods to save tokens)
+        data_summary = prepare_data_summary(chart.data, chart.series, periods=12)
+        summary_sections.append(data_summary["formatted_table"])
         summary_sections.append("")
+        
+        # Track metadata
+        chart_summaries.append({
+            "title": chart.title,
+            "latest_date": data_summary["latest_date"],
+            "latest_values": data_summary["latest_values"],
+            "growth_3m": data_summary["growth_3m"]
+        })
+        
+        # Update overall latest date
+        if data_summary["latest_date"] and (latest_overall_date is None or data_summary["latest_date"] > latest_overall_date):
+            latest_overall_date = data_summary["latest_date"]
     
-    return "\n".join(summary_sections)
+    return {
+        "formatted_text": "\n".join(summary_sections),
+        "latest_overall_date": latest_overall_date,
+        "chart_summaries": chart_summaries
+    }
 
 
 # --------------------------
@@ -1292,14 +1394,14 @@ def generate_analysis_for_chart(idx: int):
     chart = st.session_state.charts[idx]
 
     with st.spinner("Generating analysis..."):
-        # Prepare data summary with multi-series support
+        # Prepare data summary with metadata (multi-series support)
         data_summary = prepare_data_summary(
             chart.data,
             chart.series,
             periods=24
         )
 
-        # Generate narrative (use first series label for context)
+        # Generate narrative with new metadata structure
         series_name = chart.series[0].series_label if chart.series else "Economic Indicator"
         narrative = generate_narrative(
             data_summary,
@@ -1326,10 +1428,10 @@ def generate_executive_briefing():
         return
     
     with st.spinner("Generating Executive Briefing... This may take a moment."):
-        # Prepare holistic data summary from all charts
+        # Prepare holistic data summary from all charts (returns dict with metadata)
         context_data = prepare_holistic_data_summary(st.session_state.charts)
         
-        # Generate executive summary
+        # Generate executive summary with new metadata structure
         executive_summary = generate_executive_summary(
             context_data,
             st.session_state.openai_api_key
