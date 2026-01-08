@@ -297,7 +297,11 @@ def generate_narrative(
     Uses a "Breaking News" style focusing on the most recent data.
 
     Args:
-        data_summary: Dictionary with formatted_table, latest_date, latest_values, growth_3m
+        data_summary: Dictionary with:
+            - formatted_table: Markdown table string
+            - latest_date: Overall date of last row (str or None)
+            - latest_values: Dict of {Series Label: {"value": X, "date": "YYYY-MM-DD"}}
+            - growth_3m: Dict of {Series Label: % change}
         series_name: Name of the economic series being analyzed
         api_key: OpenAI API key
         model: Model to use (default: gpt-4o-mini)
@@ -321,13 +325,21 @@ Your writing style:
 
 Keep analysis to 2 paragraphs maximum."""
 
-        # Format latest values and momentum for the prompt
+        # Format latest values with per-series dates (handles ragged edge)
         latest_values_text = ""
         if data_summary.get("latest_values"):
-            latest_values_text = ", ".join([
-                f"{label}: {value:.2f}"
-                for label, value in data_summary["latest_values"].items()
-            ])
+            latest_parts = []
+            for label, info in data_summary["latest_values"].items():
+                # Handle both new format {"value": X, "date": "YYYY-MM-DD"} 
+                # and legacy format (plain float) for backward compatibility
+                if isinstance(info, dict):
+                    value = info.get("value", 0)
+                    date = info.get("date", "Unknown")
+                    latest_parts.append(f"{label}: {value:.2f} (as of {date})")
+                else:
+                    # Legacy format - plain number
+                    latest_parts.append(f"{label}: {info:.2f}")
+            latest_values_text = "\n".join(latest_parts)
 
         momentum_text = ""
         if data_summary.get("growth_3m"):
@@ -339,7 +351,8 @@ Keep analysis to 2 paragraphs maximum."""
         else:
             momentum_text = "Insufficient data for 3-month trend"
 
-        user_prompt = f"""LATEST DATA ({data_summary.get('latest_date', 'Unknown')}): {latest_values_text}
+        user_prompt = f"""LATEST DATA REPORT:
+{latest_values_text}
 
 RECENT MOMENTUM (3-month trend): {momentum_text}
 
@@ -536,8 +549,8 @@ def save_plotly_as_png(fig: go.Figure, output_path: Path) -> None:
 def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], periods: int = 24) -> Dict:
     """
     Prepare recent data summary for LLM context with metadata.
-    Supports both single and multi-series data.
-
+    Handles "ragged edge" data by finding actual last valid value per series.
+    
     Args:
         df: DataFrame with time series data
         series_list: List of SeriesInfo objects
@@ -546,9 +559,9 @@ def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], period
     Returns:
         Dictionary containing:
             - formatted_table: Markdown table string
-            - latest_date: Date of last row (str or None)
-            - latest_values: Dict of {Series Label: Value} for last row
-            - growth_3m: Dict of {Series Label: % change} over last 3 entries
+            - latest_date: Date of most recent row (str or None) 
+            - latest_values: Dict of {Series Label: {"value": X, "date": "YYYY-MM-DD"}}
+            - growth_3m: Dict of {Series Label: % change} over last 3 valid entries
     """
     # Default empty response
     empty_response = {
@@ -573,30 +586,39 @@ def prepare_data_summary(df: pd.DataFrame, series_list: List[SeriesInfo], period
     if recent_data.empty:
         return empty_response
 
-    # Extract metadata from the data
-    # 1. Latest date
+    # Extract metadata from the data - FIX FOR RAGGED EDGE
+    # 1. Latest overall date (last row in dataframe)
     latest_date = recent_data.index[-1]
     latest_date_str = latest_date.strftime("%Y-%m-%d") if hasattr(latest_date, 'strftime') else str(latest_date)
 
-    # 2. Latest values for each series
-    latest_row = recent_data.iloc[-1]
+    # 2. Latest values for each series - ANCHOR ON ACTUAL LAST VALID VALUE
     latest_values = {}
     for s in available_series:
-        value = latest_row[s.series_id]
-        if pd.notna(value):
-            latest_values[s.series_label] = float(value)
+        # Isolate this series and drop NaNs
+        series_data = recent_data[s.series_id].dropna()
+        if not series_data.empty:
+            # Find the ACTUAL last valid value and its date
+            last_valid_value = series_data.iloc[-1]
+            last_valid_date = series_data.index[-1]
+            last_valid_date_str = last_valid_date.strftime("%Y-%m-%d") if hasattr(last_valid_date, 'strftime') else str(last_valid_date)
+            
+            latest_values[s.series_label] = {
+                "value": float(last_valid_value),
+                "date": last_valid_date_str
+            }
 
-    # 3. Growth over last 3 entries (3-month momentum)
+    # 3. Growth over last 3 entries (3-month momentum) - CALCULATE FROM ACTUAL VALID VALUES
     growth_3m = {}
-    if len(recent_data) >= 3:
-        for s in available_series:
-            series_data = recent_data[s.series_id].dropna()
-            if len(series_data) >= 3:
-                latest_val = series_data.iloc[-1]
-                three_months_ago = series_data.iloc[-3]
-                if pd.notna(latest_val) and pd.notna(three_months_ago) and three_months_ago != 0:
-                    pct_change = ((latest_val - three_months_ago) / abs(three_months_ago)) * 100
-                    growth_3m[s.series_label] = float(pct_change)
+    for s in available_series:
+        # Isolate this series and drop NaNs
+        series_data = recent_data[s.series_id].dropna()
+        if len(series_data) >= 3:
+            # Use last 3 valid values for this specific series
+            latest_val = series_data.iloc[-1]
+            three_periods_ago = series_data.iloc[-3]
+            if pd.notna(latest_val) and pd.notna(three_periods_ago) and three_periods_ago != 0:
+                pct_change = ((latest_val - three_periods_ago) / abs(three_periods_ago)) * 100
+                growth_3m[s.series_label] = float(pct_change)
 
     # Format as markdown table
     if len(available_series) == 1:
