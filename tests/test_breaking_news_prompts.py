@@ -77,15 +77,19 @@ def test_prepare_data_summary_returns_dict():
         assert result["latest_date"] is not None, "latest_date should not be None"
         print(f"  ✓ latest_date: {result['latest_date']}")
         
-        # Verify latest_values
+        # Verify latest_values (NEW FORMAT: dict with "value" and "date")
         assert "Real GDP" in result["latest_values"], "latest_values should contain 'Real GDP'"
-        assert result["latest_values"]["Real GDP"] == 107.0, "latest_values should be 107.0"
-        print(f"  ✓ latest_values: {result['latest_values']}")
+        gdp_info = result["latest_values"]["Real GDP"]
+        assert isinstance(gdp_info, dict), "latest_values should be dict with 'value' and 'date'"
+        assert gdp_info["value"] == 107.0, f"latest_values value should be 107.0, got {gdp_info.get('value')}"
+        assert "date" in gdp_info, "latest_values should have 'date' key"
+        print(f"  ✓ latest_values: Real GDP = {gdp_info['value']} as of {gdp_info['date']}")
         
-        # Verify growth_3m (should be (107-103)/103 * 100 = ~3.88%)
+        # Verify growth_3m (should be (107-105)/105 * 100 = ~1.90%)
         # Data points: [100, 102, 104, 103, 105, 107]
-        # Last 3 are: [103, 105, 107]
-        # Growth = (107 - 103) / 103 * 100
+        # Last 3 valid values at indices [-3, -2, -1] are: [105, 107]... wait, only 6 points total
+        # Actually indices [-3] = 103, [-2] = 105, [-1] = 107
+        # Growth = (107 - 103) / 103 * 100 = 3.88%
         assert "Real GDP" in result["growth_3m"], "growth_3m should contain 'Real GDP'"
         growth = result["growth_3m"]["Real GDP"]
         expected_growth = ((107 - 103) / 103) * 100
@@ -124,12 +128,16 @@ def test_prepare_data_summary_multi_series():
         
         result = prepare_data_summary(df, series_list, periods=5)
         
-        # Verify both series in latest_values
+        # Verify both series in latest_values (NEW FORMAT)
         assert "Real GDP" in result["latest_values"], "Missing Real GDP in latest_values"
         assert "CPI" in result["latest_values"], "Missing CPI in latest_values"
-        assert result["latest_values"]["Real GDP"] == 108.0
-        assert result["latest_values"]["CPI"] == 205.0
-        print(f"  ✓ latest_values correct for multi-series: {result['latest_values']}")
+        gdp_info = result["latest_values"]["Real GDP"]
+        cpi_info = result["latest_values"]["CPI"]
+        assert isinstance(gdp_info, dict), "latest_values should be dict"
+        assert isinstance(cpi_info, dict), "latest_values should be dict"
+        assert gdp_info["value"] == 108.0, f"GDP value should be 108.0, got {gdp_info.get('value')}"
+        assert cpi_info["value"] == 205.0, f"CPI value should be 205.0, got {cpi_info.get('value')}"
+        print(f"  ✓ latest_values correct for multi-series: GDP={gdp_info['value']} as of {gdp_info['date']}, CPI={cpi_info['value']} as of {cpi_info['date']}")
         
         # Verify both series in growth_3m
         assert "Real GDP" in result["growth_3m"], "Missing Real GDP in growth_3m"
@@ -201,9 +209,11 @@ def test_prepare_data_summary_insufficient_data_for_growth():
         
         result = prepare_data_summary(df, series_list, periods=6)
         
-        # Should have formatted_table and latest_values, but no growth_3m
+        # Should have formatted_table and latest_values, but no growth_3m (NEW FORMAT)
         assert result["formatted_table"] != "No data available"
-        assert result["latest_values"]["Real GDP"] == 102.0
+        gdp_info = result["latest_values"]["Real GDP"]
+        assert isinstance(gdp_info, dict), "latest_values should be dict"
+        assert gdp_info["value"] == 102.0, f"GDP value should be 102.0, got {gdp_info.get('value')}"
         assert result["growth_3m"] == {}, "growth_3m should be empty with insufficient data"
         print("  ✓ Handles insufficient data for growth calculation")
         
